@@ -31,11 +31,8 @@ func main() {
 
   b.Handle("/start", func(m *tb.Message){
     b.Send(m.Sender, "Bienvenido al megabot")
+    log.Printf("id: %v", m.Chat.ID)
   })
-
-	b.Handle("/hello", func(m *tb.Message) {
-		b.Send(m.Sender, "Hello World!")
-	})
 
 	b.Start()
 }
