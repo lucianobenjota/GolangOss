@@ -14,4 +14,6 @@ go-oss-bot
 # Dependency directories (remove the comment below to include it)
 # vendor/
 *.env
-
+*.xlsx
+*.xls
+*.csv
