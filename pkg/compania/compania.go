@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gocarina/gocsv"
-	"github.com/lucianobenjota/go-oss-bot/m/pkg/convetidor"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/convertidor"
 )
 
 type Afiliado struct {
@@ -46,7 +46,7 @@ var interCSV string
 func ReporteACSV(reportPath string, outCSVPath string) error {
 	interCSV = "archivo.csv"
 	// Crear un archivo intermedio,  podria ser reemplazado por uno temporal
-	err := convetidor.CmdWrapper(reportPath, interCSV)
+	err := convertidor.CmdWrapper(reportPath, interCSV)
 	csvInterFile, err := os.Open(interCSV)
 	if err != nil {
 		return err
