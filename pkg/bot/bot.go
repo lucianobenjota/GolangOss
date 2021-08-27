@@ -72,27 +72,24 @@ func StartBot() (err error) {
 
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
 		if modo == "Compañia" {
+			filename := m.Document.FileName
+			csvfilename := descargas.FileNameWithoutExt(filename) + ".csv"
+			log.Println("Descargando ", filename)
 			d := &descargas.Download{Bot: *b, Msg: *m}
-			d.DescargarArchivo("chivo.xls")
-			err := compania.ReporteACSV("chivo.xls", "trolave.csv")
+			d.DescargarArchivo(filename)
+			err := compania.ReporteACSV(filename, csvfilename)
 			if err != nil {
 				log.Println("Error al recibir reporte")
 				log.Panic(err)
 			}
 
 			resDoc := &tb.Document{
-				File:     tb.FromDisk("trolave.csv"),
-				FileName: "trolave.csv",
+				File:     tb.FromDisk(csvfilename),
+				FileName: csvfilename,
 				MIME:     "text/csv",
 			}
 			b.Send(m.Sender, resDoc)
 
-			// file, err := os.Open("file.csv")
-			// if err != nil {
-			// 	log.Panic(err)
-			// }
-			// b.Send(m.Sender, "Proceso finalizao")
-			// b.Send(m.Sender, file)
 		}
 
 	})
