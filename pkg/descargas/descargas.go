@@ -3,6 +3,7 @@ package descargas
 import (
 	"io"
 	"os"
+	"time"
 
 	"github.com/schollz/progressbar/v3"
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -43,9 +44,19 @@ func (d Download) DescargarArchivo(localPath string) error {
 	if err != nil {
 		return err
 	}
+
+	// bar := progressbar.DefaultBytesSilent(int64(d.Msg.Document.FileSize), "Descargando..")
+	bar := progressbar.NewOptions(
+		d.Msg.Document.FileSize,
+		progressbar.OptionSetWidth(15),
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionThrottle(time.Millisecond*700),
+		progressbar.OptionSetDescription("Descargando.."),
+	)
+
 	counter := &WriteProgress{
 		Total: uint64(d.Msg.Document.FileSize),
-		bar:   *progressbar.DefaultBytesSilent(int64(d.Msg.Document.FileSize), "Recibiendo.."),
+		bar:   *bar,
 		msg:   *status,
 		bot:   *&d.Bot,
 	}
