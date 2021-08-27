@@ -3,6 +3,7 @@ package descargas
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/schollz/progressbar/v3"
@@ -96,4 +97,8 @@ func EliminarSiExiste(localPath string) error {
 		os.Remove(localPath)
 	}
 	return nil
+}
+
+func FileNameWithoutExt(fileName string) string {
+	return fileName[:len(fileName)-len(filepath.Ext(fileName))]
 }

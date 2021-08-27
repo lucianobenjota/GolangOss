@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/compania"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/descargas"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -71,15 +72,21 @@ func StartBot() (err error) {
 
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
 		if modo == "Compañia" {
-			log.Println("Archivo recivido")
 			d := &descargas.Download{Bot: *b, Msg: *m}
 			d.DescargarArchivo("chivo.xls")
-			// b.Download(&m.Document.File, "./file.xls")
-			// err := compania.ReporteACSV("file.xls", "file.csv")
-			// if err != nil {
-			// 	log.Println("Error al recibir reporte")
-			// 	log.Panic(err)
-			// }
+			err := compania.ReporteACSV("chivo.xls", "trolave.csv")
+			if err != nil {
+				log.Println("Error al recibir reporte")
+				log.Panic(err)
+			}
+
+			resDoc := &tb.Document{
+				File:     tb.FromDisk("trolave.csv"),
+				FileName: "trolave.csv",
+				MIME:     "text/csv",
+			}
+			b.Send(m.Sender, resDoc)
+
 			// file, err := os.Open("file.csv")
 			// if err != nil {
 			// 	log.Panic(err)
