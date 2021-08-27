@@ -13,7 +13,10 @@ require (
 	github.com/gocarina/gocsv v0.0.0-20210516172204-ca9e8a8ddea8 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/guptarohit/asciigraph v0.5.2 // indirect
+	github.com/mattn/go-colorable v0.1.8 // indirect
+	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
+	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
