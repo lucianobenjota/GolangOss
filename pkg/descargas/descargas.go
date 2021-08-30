@@ -27,7 +27,6 @@ func (d Download) DescargarArchivo(localPath string) error {
 	// Descarga archivo desde el bot de telegram enviando
 	// una notificacion con el progreso de la descarga
 	// requiere la direccion del archivo local
-
 	downloadedFile, err := d.Bot.GetFile(&d.Msg.Document.File)
 	if err != nil {
 		return err
@@ -75,13 +74,7 @@ func (wc *WriteProgress) Write(p []byte) (int, error) {
 	// Escritor del io.Reader
 	n := len(p)
 	wc.Progreso += uint64(n)
-	CumCounter += n
-	if CumCounter > 40000 {
-		// Para no saturar al p2 la salida
-		wc.EnviarProgreso()
-		CumCounter = 0
-	}
-
+	go wc.EnviarProgreso()
 	wc.bar.Add(n)
 	return n, nil
 }

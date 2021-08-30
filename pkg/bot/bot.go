@@ -72,9 +72,9 @@ func StartBot() (err error) {
 
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
 		if modo == "Compañia" {
-			filename := m.Document.FileName
-			csvfilename := descargas.FileNameWithoutExt(filename) + ".csv"
-			log.Println("Descargando ", filename)
+			destFolder := os.Getenv("PROCESS_FOLDER")
+			filename := destFolder + m.Document.FileName
+			csvfilename := destFolder + descargas.FileNameWithoutExt(m.Document.FileName) + ".csv"
 			d := &descargas.Download{Bot: *b, Msg: *m}
 			d.DescargarArchivo(filename)
 			err := compania.ReporteACSV(filename, csvfilename)
