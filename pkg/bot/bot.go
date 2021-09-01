@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/compania"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/descargas"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/pagomono"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -43,10 +44,13 @@ func StartBot() (err error) {
 		menu        = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
 		btnCompañia = menu.Text("🏢 Compañia")
 		btnAyuda    = menu.Text("⚙ Ayuda")
+		btnScrap    = menu.Text("🤖 Pagos Monotributo")
+		btnNovedad  = menu.Text("🙌 Generar Novedades")
 	)
 
 	menu.Reply(
-		menu.Row(btnCompañia),
+		menu.Row(btnCompañia, btnScrap),
+		menu.Row(btnNovedad),
 		menu.Row(btnAyuda),
 	)
 
@@ -70,6 +74,27 @@ func StartBot() (err error) {
 		b.Send(m.Sender, "Envie el archivo de Reporte de compañia")
 	})
 
+	b.Handle(&btnScrap, func(m *tb.Message) {
+		if m.Chat.ID != tgUserId {
+			return
+		}
+		modo = "PagoMonotributo"
+		b.Delete(m)
+		b.Send(m.Sender, "Iniciando scrap de monotributo")
+		err := pagomono.IniciarScrap()
+		if err != nil {
+			log.Panicln(err)
+		}
+	})
+
+	b.Handle(&btnNovedad, func(m *tb.Message) {
+		if m.Chat.ID != tgUserId {
+			return
+		}
+		modo = "novedades"
+		b.Send(m.Sender, "Enviar un archivo de reporte con las novedades")
+	})
+
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
 		if modo == "Compañia" {
 			destFolder := os.Getenv("PROCESS_FOLDER")
@@ -89,9 +114,14 @@ func StartBot() (err error) {
 				MIME:     "text/csv",
 			}
 			b.Send(m.Sender, resDoc)
-
 		}
 
+	})
+
+	b.Handle(tb.OnDocument, func(m *tb.Message) {
+		if modo == "novedades" {
+			log.Println("Modo novedades activado 🤖..")
+		}
 	})
 
 	b.Start()
