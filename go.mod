@@ -8,6 +8,7 @@ require (
 )
 
 require (
+	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/go-gota/gota v0.11.0 // indirect
 	github.com/gocarina/gocsv v0.0.0-20210516172204-ca9e8a8ddea8 // indirect
@@ -24,6 +25,7 @@ require (
 	github.com/rocketlaunchr/dataframe-go v0.0.0-20210422123815-aaa951b82e1b // indirect
 	github.com/schollz/progressbar v1.0.0 // indirect
 	github.com/schollz/progressbar/v3 v3.8.2 // indirect
+	github.com/tebeka/selenium v0.9.9 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
 	golang.org/x/net v0.0.0-20210423184538-5f58ad60dda6 // indirect
