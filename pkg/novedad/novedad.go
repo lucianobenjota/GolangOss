@@ -128,6 +128,7 @@ func (n Novedad) NuevaNovedad(af *AfReporteMICAM) Novedad {
 	n.Nacionalidad = obtenerNacionalidad(af.Nacionalidad)
 	n.TipoDomicilio = obtenerTipoDomicilio(af.Domicilio)
 	n.Incapacidad = obtenerIncapacidad(af.TipoAf)
+	n.FechaAltaOS = strings.ReplaceAll(af.FechaAlta, "/", "")
 	return n
 }
 
