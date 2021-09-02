@@ -1,6 +1,7 @@
 package convertidor
 
 import (
+	"log"
 	"os"
 	"os/exec"
 )
@@ -8,6 +9,7 @@ import (
 func CmdWrapper(xlsFile string, outCSVFile string) error {
 	// LLamar al comando de rust para convertir el xls a csv
 	if _, err := os.Stat(outCSVFile); os.IsExist(err) {
+		log.Println("Eliminando xls..")
 		os.Remove(xlsFile)
 	}
 
