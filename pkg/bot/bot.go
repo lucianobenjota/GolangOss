@@ -124,7 +124,6 @@ func StartBot() (err error) {
 			destFolder := os.Getenv("PROCESS_FOLDER")
 
 			filename := destFolder + m.Document.FileName
-
 			csvfilename := destFolder + descargas.FileNameWithoutExt(m.Document.FileName) + ".csv"
 
 			d := &descargas.Download{Bot: *b, Msg: *m}
@@ -143,6 +142,10 @@ func StartBot() (err error) {
 			defer csvF.Close()
 
 			filedest := destFolder + "novedad.csv"
+			err = os.Remove(filedest)
+			if err != nil {
+				log.Println("No existe el archivo, procediendo")
+			}
 			err = novedad.CSVANovedad(csvF, filedest)
 			if err != nil {
 				log.Panicln(err)
@@ -150,7 +153,7 @@ func StartBot() (err error) {
 
 			resDoc := &tb.Document{
 				File:     tb.FromDisk(filedest),
-				FileName: csvfilename,
+				FileName: filedest,
 				MIME:     "text/csv",
 			}
 
