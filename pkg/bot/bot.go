@@ -8,7 +8,9 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/compania"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/convertidor"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/descargas"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/novedad"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/pagomono"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -97,7 +99,7 @@ func StartBot() (err error) {
 
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
 		if modo == "compañia" {
-      log.Println("iniciando proceso del archivo de compañia..")
+			log.Println("iniciando proceso del archivo de compañia..")
 			destFolder := os.Getenv("PROCESS_FOLDER")
 			filename := destFolder + m.Document.FileName
 			csvfilename := destFolder + descargas.FileNameWithoutExt(m.Document.FileName) + ".csv"
@@ -117,7 +119,42 @@ func StartBot() (err error) {
 			b.Send(m.Sender, resDoc)
 		}
 		if modo == "novedades" {
-			log.Println("Modo novedades activado 🤖..")
+			b.Send(m.Sender, "Modo novedades activado 🤖..")
+
+			destFolder := os.Getenv("PROCESS_FOLDER")
+
+			filename := destFolder + m.Document.FileName
+
+			csvfilename := destFolder + descargas.FileNameWithoutExt(m.Document.FileName) + ".csv"
+
+			d := &descargas.Download{Bot: *b, Msg: *m}
+			d.DescargarArchivo(filename)
+
+			err := convertidor.CmdWrapper(filename, csvfilename)
+			if err != nil {
+				log.Panicln(err)
+			}
+
+			csvF, err := os.Open(csvfilename)
+			if err != nil {
+				log.Panicln(err)
+			}
+
+			defer csvF.Close()
+
+			filedest := destFolder + "novedad.csv"
+			err = novedad.CSVANovedad(csvF, filedest)
+			if err != nil {
+				log.Panicln(err)
+			}
+
+			resDoc := &tb.Document{
+				File:     tb.FromDisk(filedest),
+				FileName: csvfilename,
+				MIME:     "text/csv",
+			}
+
+			b.Send(m.Sender, resDoc)
 		}
 
 	})
