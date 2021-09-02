@@ -140,7 +140,7 @@ func obtenerTelefono(a *AfReporteMICAM) string {
 	}
 	res = strings.ReplaceAll(res, "-", "")
 	res = strings.ReplaceAll(res, " ", "")
-
+	res = strings.TrimLeft(res, "0")
 	if len(res) > 20 {
 		res = string(res[0:20])
 	}
