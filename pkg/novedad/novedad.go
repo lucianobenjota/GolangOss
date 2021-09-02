@@ -139,6 +139,7 @@ func obtenerTelefono(a *AfReporteMICAM) string {
 		res = a.Celular
 	}
 	res = strings.ReplaceAll(res, "-", "")
+	res = strings.ReplaceAll(res, " ", "")
 
 	if len(res) > 20 {
 		res = string(res[0:20])
@@ -284,8 +285,13 @@ func obtenerDomicilio(direccion string) (calle string, numero string) {
 		return "S/D", "0"
 	}
 	i_nro := len(palabras) - 1
-	numero = palabras[i_nro]
-	calle = strings.Join(palabras[:i_nro], " ")
+	if i_nro >= 0 {
+		numero = palabras[i_nro]
+		calle = strings.Join(palabras[:i_nro], " ")
+	} else {
+		numero = "0"
+		calle = "S/D"
+	}
 
 	if len(calle) > 20 {
 		calle = string(calle[0:20])
