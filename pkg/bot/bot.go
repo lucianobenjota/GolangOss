@@ -41,16 +41,16 @@ func StartBot() (err error) {
 	}
 
 	var (
-		menu        = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
-		btnCompañia = menu.Text("🏢 Compañia")
-		btnAyuda    = menu.Text("⚙ Ayuda")
-		btnScrap    = menu.Text("🤖 Pagos Monotributo")
-		btnNovedad  = menu.Text("🙌 Generar Novedades")
+		menu         = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+		btnCompañia  = menu.Text("🏢 Compañia")
+		btnAyuda     = menu.Text("⚙ Ayuda")
+		btnScrap     = menu.Text("🤖 Pagos Monotributo")
+		btnNovedades = menu.Text("🙌 Generar Novedades")
 	)
 
 	menu.Reply(
 		menu.Row(btnCompañia, btnScrap),
-		menu.Row(btnNovedad),
+		menu.Row(btnNovedades),
 		menu.Row(btnAyuda),
 	)
 
@@ -69,7 +69,7 @@ func StartBot() (err error) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
-		modo = "Compañia"
+		modo = "compañia"
 		b.Delete(m)
 		b.Send(m.Sender, "Envie el archivo de Reporte de compañia")
 	})
@@ -78,7 +78,7 @@ func StartBot() (err error) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
-		modo = "PagoMonotributo"
+		modo = "pagomonotributo"
 		b.Delete(m)
 		b.Send(m.Sender, "Iniciando scrap de monotributo")
 		err := pagomono.IniciarScrap()
@@ -87,7 +87,7 @@ func StartBot() (err error) {
 		}
 	})
 
-	b.Handle(&btnNovedad, func(m *tb.Message) {
+	b.Handle(&btnNovedades, func(m *tb.Message) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
@@ -96,7 +96,8 @@ func StartBot() (err error) {
 	})
 
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
-		if modo == "Compañia" {
+		if modo == "compañia" {
+      log.Println("iniciando proceso del archivo de compañia..")
 			destFolder := os.Getenv("PROCESS_FOLDER")
 			filename := destFolder + m.Document.FileName
 			csvfilename := destFolder + descargas.FileNameWithoutExt(m.Document.FileName) + ".csv"
@@ -115,13 +116,10 @@ func StartBot() (err error) {
 			}
 			b.Send(m.Sender, resDoc)
 		}
-
-	})
-
-	b.Handle(tb.OnDocument, func(m *tb.Message) {
 		if modo == "novedades" {
 			log.Println("Modo novedades activado 🤖..")
 		}
+
 	})
 
 	b.Start()
