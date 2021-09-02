@@ -125,6 +125,9 @@ func (n Novedad) NuevaNovedad(af *AfReporteMICAM) Novedad {
 	n.Piso = "    "
 	n.Depto = "    "
 	n.Provincia = "04"
+	n.Nacionalidad = obtenerNacionalidad(af.Nacionalidad)
+	n.TipoDomicilio = obtenerTipoDomicilio(af.Domicilio)
+	n.Incapacidad = obtenerIncapacidad(af.TipoAf)
 	return n
 }
 
@@ -294,4 +297,54 @@ func obtenerDomicilio(direccion string) (calle string, numero string) {
 	calle = PadRight(calle, " ", 20)
 	numero = PadRight(numero, " ", 5)
 	return calle, numero
+}
+
+// Obtener codigo de nacionalidad
+func obtenerNacionalidad(nacionalidad string) string {
+	in := strings.TrimSpace(nacionalidad)
+	var res string
+	switch in {
+	case "Argentina":
+		res = "012"
+	case "No Definido":
+		res = "012"
+	case "Bolivia":
+		res = "024"
+	case "Chile":
+		res = "036"
+	case "España":
+		res = "051"
+	case "Honduras":
+		res = "073"
+	case "Paraguay":
+		res = "132"
+	case "Perú":
+		res = "133"
+	default:
+		res = "nnn"
+	}
+	return res
+}
+
+// Obtener el tipo de domicilio
+func obtenerTipoDomicilio(domicilio string) string {
+	var res string
+	if strings.Contains(domicilio, "KM") {
+		res = "02"
+	} else {
+		res = "01"
+	}
+	return res
+}
+
+// Obtiene el codigo de incapacidad
+func obtenerIncapacidad(parentesco string) string {
+	r := strings.TrimSpace(parentesco)
+	if r == "Hijo/a incapacitados" {
+		return "01"
+	} else if r == "Mayor de 25 años Discapacitado" {
+		return "01"
+	} else {
+		return "00"
+	}
 }
