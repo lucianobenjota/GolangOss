@@ -1,7 +1,10 @@
 package novedad
 
 import (
+	"os"
 	"strings"
+
+	"github.com/gocarina/gocsv"
 )
 
 // Estructura de tags de novedad a exportar como CSV
@@ -73,8 +76,36 @@ type AfReporteMICAM struct {
 	Zona          string `csv:"Zona"`
 }
 
+// Obtener las novedades desde el archivo csv de reporte
+func CSVANovedad(archivoCSV *os.File, rutaSalida string) error {
+	reporte := []*AfReporteMICAM{}
+
+	salida := []*Novedad{}
+
+	if err := gocsv.UnmarshalFile(archivoCSV, &reporte); err != nil {
+		return err
+	}
+
+	for _, v := range reporte {
+		nv := Novedad{}
+		nv = nv.NuevaNovedad(v)
+		salida = append(salida, &nv)
+	}
+
+	archivoSalida, err := os.OpenFile(rutaSalida, os.O_CREATE|os.O_WRONLY, 0644)
+
+	if err != nil {
+		return err
+	}
+	err = gocsv.MarshalFile(&salida, archivoSalida)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Crear una nueva novedad desde el afiliado
-func (n Novedad) NuevaNovedad(af AfReporteMICAM) {
+func (n Novedad) NuevaNovedad(af *AfReporteMICAM) Novedad {
 	n.RNOS = "128201"
 	n.Grupo = strings.TrimSpace(af.Grupo)
 	n.CUIL = strings.ReplaceAll(af.CUIL, "-", "")
@@ -86,22 +117,12 @@ func (n Novedad) NuevaNovedad(af AfReporteMICAM) {
 	n.Localidad = formatLocalidad(af.Localidad)
 	n.CodPostal = formatCPA(af.CodPostal)
 	n.Telefono = obtenerTelefono(af)
-}
-
-// Obtiene el cuil del titular desde el reporte de micam
-func (n Novedad) ObtenerCUILTitular(emp []AfReporteMICAM) {
-	nroTit := n.Grupo + "00"
-	var res string
-	for _, v := range emp {
-		if v.NroAf == nroTit {
-			res = strings.ReplaceAll(v.CUIL, "-", "")
-		}
-	}
-	n.CUILTitular = res
+	n.EstadoCivil = obtenerEstadoCivil(af.EstadoCivil)
+	return n
 }
 
 // Obtiene el telefono desde el reporte de MICAM
-func obtenerTelefono(a AfReporteMICAM) string {
+func obtenerTelefono(a *AfReporteMICAM) string {
 	res := a.TelefonoFijo
 	if len(a.Celular) > 0 {
 		res = a.Celular
@@ -163,5 +184,32 @@ func formatNombre(nombre string) string {
 		res = res[0:20]
 	}
 	res = PadRight(res, " ", 20)
+	return res
+}
+
+// Obtiene el codigo de estado civil desde el reporte
+func obtenerEstadoCivil(rcivil string) string {
+	in := strings.TrimSpace(rcivil)
+	var res string
+	switch in {
+	case "Soltero":
+		res = "01"
+	case "Casado":
+		res = "02"
+	case "Viudo":
+		res = "03"
+	case "Divorciado":
+		res = "06"
+	case "Legal":
+		res = "04"
+	case "De hecho":
+		res = "05"
+	case "Convivencia":
+		res = "07"
+	case "No definido":
+		res = "01"
+	default:
+		res = "01"
+	}
 	return res
 }
