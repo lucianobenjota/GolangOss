@@ -21,6 +21,7 @@ type Novedad struct {
 	Sexo             string `csv:"sexo"`
 	EstadoCivil      string `csv:"estado_civil"`
 	FechaNac         string `csv:"fecha_nac"`
+	Nacionalidad     string `csv:"nacionalidad"`
 	Calle            string `csv:"calle"`
 	NroPuerta        string `csv:"nro_puerta"`
 	Piso             string `csv:"piso"`
@@ -120,6 +121,10 @@ func (n Novedad) NuevaNovedad(af *AfReporteMICAM) Novedad {
 	n.Telefono = obtenerTelefono(af)
 	n.EstadoCivil = obtenerEstadoCivil(af.EstadoCivil)
 	n.Parentesco = obtenerParentesco(af.TipoAf, af.Edad)
+	n.Calle, n.NroPuerta = obtenerDomicilio(af.Domicilio)
+	n.Piso = "    "
+	n.Depto = "    "
+	n.Provincia = "04"
 	return n
 }
 
@@ -265,4 +270,28 @@ func obtenerParentesco(parentesco string, edad string) string {
 		res = "ER"
 	}
 	return res
+}
+
+// Obtener la direccion y el numero de puerta desde el campo de reporte
+func obtenerDomicilio(direccion string) (calle string, numero string) {
+	res := strings.TrimSpace(direccion)
+	palabras := strings.Fields(res)
+	if res == "0" {
+		return "S/D", "0"
+	}
+	i_nro := len(palabras) - 1
+	numero = palabras[i_nro]
+	calle = strings.Join(palabras[:i_nro], " ")
+
+	if len(calle) > 20 {
+		calle = string(calle[0:20])
+	}
+
+	if len(numero) > 5 {
+		numero = string(numero[0:5])
+	}
+
+	calle = PadRight(calle, " ", 20)
+	numero = PadRight(numero, " ", 5)
+	return calle, numero
 }
