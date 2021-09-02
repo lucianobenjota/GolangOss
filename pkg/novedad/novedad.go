@@ -2,6 +2,7 @@ package novedad
 
 import (
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gocarina/gocsv"
@@ -118,6 +119,7 @@ func (n Novedad) NuevaNovedad(af *AfReporteMICAM) Novedad {
 	n.CodPostal = formatCPA(af.CodPostal)
 	n.Telefono = obtenerTelefono(af)
 	n.EstadoCivil = obtenerEstadoCivil(af.EstadoCivil)
+	n.Parentesco = obtenerParentesco(af.TipoAf, af.Edad)
 	return n
 }
 
@@ -210,6 +212,57 @@ func obtenerEstadoCivil(rcivil string) string {
 		res = "01"
 	default:
 		res = "01"
+	}
+	return res
+}
+
+// Obtener el codigo de parentesco desde el reporte
+func obtenerParentesco(parentesco string, edad string) string {
+	in := strings.TrimSpace(parentesco)
+	var res string
+	switch in {
+	case "Adherente":
+		res = "08"
+	case "Concubino/a":
+		res = "02"
+	case "Conyuge":
+		res = "01"
+	case "Familiar a Cargo":
+		res = "08"
+	case "Hijastro/a a cargo menor de 21 años":
+		res = "05"
+	case "Hijastro/a edad 21 a 25 años que estudien":
+		res = "06"
+	case "Hijo/a Conyugue":
+		res = "05"
+	case "Hijo/a edad 21 a 25 que estudien":
+		res = "04"
+	case "Hijo/a incapacitados":
+		e, err := strconv.Atoi(edad)
+		if err != nil {
+			res = "ER"
+		}
+		if e >= 21 {
+			res = "04"
+		} else {
+			res = "03"
+		}
+	case "Hijo/a Menor 21":
+		res = "03"
+	case "Hijos/as":
+		res = "03"
+	case "Mayor de 25 años Discapacitado":
+		res = "09"
+	case "Menor en guarda hasta 21 años":
+		res = "07"
+	case "Sin Dato":
+		res = "SD"
+	case "Sin definir":
+		res = "SD"
+	case "Titular":
+		res = "00"
+	default:
+		res = "ER"
 	}
 	return res
 }
