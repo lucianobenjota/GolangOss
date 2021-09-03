@@ -1,9 +1,12 @@
 package novedad
 
 import (
+	"encoding/csv"
+	"io"
 	"os"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gocarina/gocsv"
 )
@@ -99,6 +102,14 @@ func CSVANovedad(archivoCSV *os.File, rutaSalida string) error {
 	if err != nil {
 		return err
 	}
+
+	gocsv.SetCSVWriter(func(out io.Writer) *gocsv.SafeCSVWriter {
+		writer := csv.NewWriter(out)
+		writer.UseCRLF = true
+		writer.Comma = '|'
+		return gocsv.NewSafeCSVWriter(writer)
+	})
+
 	err = gocsv.MarshalFile(&salida, archivoSalida)
 	if err != nil {
 		return err
@@ -161,41 +172,21 @@ func formatCPA(cpa string) string {
 // Formatea la localidad al estilo SSSalud
 func formatLocalidad(localidad string) string {
 	res := localidad
-	if len(localidad) > 20 {
+	if utf8.RuneCountInString(localidad) > 20 {
 		res = res[0:20]
 	}
 	res = PadRight(res, " ", 20)
 	return res
 }
 
-// Agrega caracteres a la derecha
-func PadRight(str, pad string, lenght int) string {
-	for {
-		str += pad
-		if len(str) > lenght {
-			return str[0:lenght]
-		}
-	}
-}
-
-// Agrega caracteres a la izquierda
-func PadLeft(str, pad string, lenght int) string {
-	for {
-		str = pad + str
-		if len(str) > lenght {
-			return str[0:lenght]
-		}
-	}
-}
-
 // Formatea el nombre del afiliado del reporte de MICAM al
 // requerido por SSS
 func formatNombre(nombre string) string {
 	res := strings.ReplaceAll(nombre, ",", "")
-	if len(res) >= 20 {
-		res = res[0:20]
+	if utf8.RuneCountInString(res) >= 30 {
+		res = res[0:30]
 	}
-	res = PadRight(res, " ", 20)
+	res = PadRight(res, " ", 30)
 	return res
 }
 
@@ -293,11 +284,11 @@ func obtenerDomicilio(direccion string) (calle string, numero string) {
 		calle = "S/D"
 	}
 
-	if len(calle) > 20 {
+	if utf8.RuneCountInString(calle) > 20 {
 		calle = string(calle[0:20])
 	}
 
-	if len(numero) > 5 {
+	if utf8.RuneCountInString(numero) > 5 {
 		numero = string(numero[0:5])
 	}
 
@@ -353,5 +344,27 @@ func obtenerIncapacidad(parentesco string) string {
 		return "01"
 	} else {
 		return "00"
+	}
+}
+
+// Agrega caracteres a la derecha
+func PadRight(str, pad string, lenght int) string {
+	for {
+		str += pad
+		lengthRune := utf8.RuneCountInString(str)
+		if lengthRune > lenght {
+			return str[0:lenght]
+		}
+	}
+}
+
+// Agrega caracteres a la izquierda
+func PadLeft(str, pad string, lenght int) string {
+	for {
+		str = pad + str
+		lengthRune := utf8.RuneCountInString(str)
+		if lengthRune > lenght {
+			return str[0:lenght]
+		}
 	}
 }

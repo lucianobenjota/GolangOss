@@ -146,6 +146,7 @@ func StartBot() (err error) {
 			if err != nil {
 				log.Println("No existe el archivo, procediendo")
 			}
+
 			err = novedad.CSVANovedad(csvF, filedest)
 			if err != nil {
 				log.Panicln(err)
