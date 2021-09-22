@@ -43,16 +43,18 @@ func StartBot() (err error) {
 	}
 
 	var (
-		menu         = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
-		btnCompañia  = menu.Text("🏢 Compañia")
-		btnAyuda     = menu.Text("⚙ Ayuda")
-		btnScrap     = menu.Text("🤖 Pagos Monotributo")
-		btnNovedades = menu.Text("🙌 Generar Novedades")
+		menu             = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
+		btnCompañia      = menu.Text("🏢 Compañia")
+		btnAyuda         = menu.Text("⚙ Ayuda")
+		btnScrap         = menu.Text("🤖 Pagos Monotributo")
+		btnNovedades     = menu.Text("🙌 Generar Novedades")
+		btnProcNovedades = menu.Text("👁 Procesar Novedad")
 	)
 
 	menu.Reply(
 		menu.Row(btnCompañia, btnScrap),
 		menu.Row(btnNovedades),
+		menu.Row(btnProcNovedades),
 		menu.Row(btnAyuda),
 	)
 
@@ -97,6 +99,14 @@ func StartBot() (err error) {
 		b.Send(m.Sender, "Enviar un archivo de reporte con las novedades")
 	})
 
+	b.Handle(&btnProcNovedades, func(m *tb.Message) {
+		if m.Chat.ID != tgUserId {
+			return
+		}
+		modo = "procnov"
+		b.Send(m.Sender, "Enviar archivo de novedad FTP")
+	})
+
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
 		if modo == "compañia" {
 			log.Println("iniciando proceso del archivo de compañia..")
@@ -119,7 +129,7 @@ func StartBot() (err error) {
 			b.Send(m.Sender, resDoc)
 		}
 		if modo == "novedades" {
-			b.Send(m.Sender, "Modo novedades activado 🤖..")
+      b.Send(m.Sender, "🤖: Modo novedades activado..")
 
 			destFolder := os.Getenv("PROCESS_FOLDER")
 
@@ -160,6 +170,10 @@ func StartBot() (err error) {
 
 			b.Send(m.Sender, resDoc)
 		}
+
+    if modo = "procnov" {
+      b.Send(m.Sendder, "🤖: Modo de proceso de novedades")
+    }
 
 	})
 
