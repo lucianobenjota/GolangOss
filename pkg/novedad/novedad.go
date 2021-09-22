@@ -8,6 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	iconv "github.com/djimenez/iconv-go"
 	"github.com/gocarina/gocsv"
 )
 
@@ -87,7 +88,10 @@ func CSVANovedad(archivoCSV *os.File, rutaSalida string) error {
 
 	salida := []*Novedad{}
 
-	if err := gocsv.UnmarshalFile(archivoCSV, &reporte); err != nil {
+	reader, err := ReadCSV(archivoCSV)
+
+	err = gocsv.Unmarshal(reader, &reporte)
+	if err != nil {
 		return err
 	}
 
@@ -367,4 +371,13 @@ func PadLeft(str, pad string, lenght int) string {
 			return str[0:lenght]
 		}
 	}
+}
+
+// Leer el archivo de origen como windows-1252
+func ReadCSV(file io.Reader) (data io.Reader, err error) {
+	data, err = iconv.NewReader(file, "utf-8", "windows-1252")
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
