@@ -53,8 +53,7 @@ func StartBot() (err error) {
 
 	menu.Reply(
 		menu.Row(btnCompañia, btnScrap),
-		menu.Row(btnNovedades),
-		menu.Row(btnProcNovedades),
+		menu.Row(btnNovedades, btnProcNovedades),
 		menu.Row(btnAyuda),
 	)
 
