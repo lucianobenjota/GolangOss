@@ -9,6 +9,7 @@ require (
 
 require (
 	github.com/blang/semver v3.5.1+incompatible // indirect
+	github.com/djimenez/iconv-go v0.0.0-20160305225143-8960e66bd3da // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/go-gota/gota v0.11.0 // indirect
 	github.com/gocarina/gocsv v0.0.0-20210516172204-ca9e8a8ddea8 // indirect
