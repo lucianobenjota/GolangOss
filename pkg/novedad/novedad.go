@@ -374,7 +374,7 @@ func PadLeft(str, pad string, lenght int) string {
 	}
 }
 
-// Leer el archivo de origen como windows-1252
+// Leer el archivo de origen con codificación windows-1252
 func ReadCSV(file io.Reader) (data io.Reader, err error) {
 	data, err = iconv.NewReader(file, "utf-8", "windows-1252")
 	if err != nil {
