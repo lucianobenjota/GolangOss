@@ -129,7 +129,7 @@ func StartBot() (err error) {
 			b.Send(m.Sender, resDoc)
 		}
 		if modo == "novedades" {
-      b.Send(m.Sender, "🤖: Modo novedades activado..")
+			b.Send(m.Sender, "🤖: Modo novedades activado..")
 
 			destFolder := os.Getenv("PROCESS_FOLDER")
 
@@ -171,9 +171,9 @@ func StartBot() (err error) {
 			b.Send(m.Sender, resDoc)
 		}
 
-    if modo = "procnov" {
-      b.Send(m.Sendder, "🤖: Modo de proceso de novedades")
-    }
+		if modo == "procnov" {
+			b.Send(m.Sender, "🤖: Modo de proceso de novedades")
+		}
 
 	})
 
