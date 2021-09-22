@@ -277,7 +277,8 @@ func obtenerDomicilio(direccion string) (calle string, numero string) {
 	res := strings.TrimSpace(direccion)
 	palabras := strings.Fields(res)
 	if res == "0" {
-		return "S/D", "0"
+		calle = "S/D"
+		numero = "0"
 	}
 	i_nro := len(palabras) - 1
 	if i_nro >= 0 {
