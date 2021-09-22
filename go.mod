@@ -27,6 +27,7 @@ require (
 	github.com/schollz/progressbar v1.0.0 // indirect
 	github.com/schollz/progressbar/v3 v3.8.2 // indirect
 	github.com/tebeka/selenium v0.9.9 // indirect
+	github.com/tushar2708/altcsv v0.0.0-20190930232535-20830d2e2c68 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
 	golang.org/x/net v0.0.0-20210423184538-5f58ad60dda6 // indirect
