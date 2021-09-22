@@ -108,7 +108,7 @@ func StartBot() (err error) {
 
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
 		if modo == "compañia" {
-			log.Println("iniciando proceso del archivo de compañia..")
+			b.Send(m.Sender, "🤖 Modo compañia")
 			destFolder := os.Getenv("PROCESS_FOLDER")
 			filename := destFolder + m.Document.FileName
 			csvfilename := destFolder + descargas.FileNameWithoutExt(m.Document.FileName) + ".csv"
@@ -128,7 +128,7 @@ func StartBot() (err error) {
 			b.Send(m.Sender, resDoc)
 		}
 		if modo == "novedades" {
-			b.Send(m.Sender, "🤖: Modo novedades activado..")
+			b.Send(m.Sender, "🤖: Modo novedades")
 
 			destFolder := os.Getenv("PROCESS_FOLDER")
 
