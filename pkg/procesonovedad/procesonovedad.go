@@ -1,43 +1,145 @@
 package procesonovedad
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"encoding/csv"
 	"log"
 	"os"
+	"strings"
+
+	"github.com/gocarina/gocsv"
 )
 
-type NovedadesFTP struct {
-	NovedadesFTP []NovedadFTP `json:"codigos"`
-}
-
 type NovedadFTP struct {
-	Codigo      string `json:"cod_dual"`
-	Descripcion string `json:"descripcion"`
-	Resumen     string `json:"resumen"`
-	Accion      string `json:"accion"`
+	Codigo      string `csv:"cod_dual"`
+	Descripcion string `csv:"descripcion"`
+	Resumen     string `csv:"resumen"`
+	Accion      string `csv:"accion"`
 }
 
-func LeerCSVFTP(archivo *os.File) {
-	base, err := os.Open("codigos.json")
+type TSVNovedad struct {
+	RNOS             string `csv:"rnos"`
+	CUIT             string `csv:"cuit"`
+	CUILTitular      string `csv:"cuil_titular"`
+	Parentesco       string `csv:"parentesco"`
+	CUIL             string `csv:"cuil"`
+	TipoDNI          string `csv:"tipo_dni"`
+	NroDNI           string `csv:"nro_dni"`
+	Nombre           string `csv:"nombre"`
+	Sexo             string `csv:"sexo"`
+	EstadoCivil      string `csv:"estado_civil"`
+	FechaNac         string `csv:"fecha_nac"`
+	Nacionalidad     string `csv:"nacionalidad"`
+	Calle            string `csv:"calle"`
+	NroPuerta        string `csv:"nro_puerta"`
+	Piso             string `csv:"piso"`
+	Depto            string `csv:"depto"`
+	Localidad        string `csv:"localidad"`
+	CodPostal        string `csv:"cod_postal"`
+	Provincia        string `csv:"provincia"`
+	TipoDomicilio    string `csv:"tipo_domicilio"`
+	Telefono         string `csv:"telefono"`
+	SituacionRevista string `csv:"situacion_revista"`
+	Incapacidad      string `csv:"incapacidad"`
+	TipoBenTitular   string `csv:"tipo_ben_titular"`
+	FechaAltaOS      string `csv:"fecha_alta_os"`
+	FechaCierre      string `csv:"fecha_cierre"`
+	Movimiento       string `csv:"movimiento"`
+	CodigoErr        string `csv:"codigo_err"`
+	CodigoVal        string `csv:"codigo_val"`
+	CUILNuevo        string `csv:"cuil_nuevo"`
+	CodigoDual       string `csv:"cod_dual"`
+	Descripcion      string `csv:"descripcion"`
+	Resumen          string `csv:"resumen"`
+	Accion           string `csv:"accion"`
+}
+
+func leerBase() (base []*NovedadFTP, err error) {
+	b, err := os.Open("./codigos.csv")
 	if err != nil {
-		log.Panic(err)
+		return nil, err
 	}
 
-	log.Println("JSON leido correctamente")
+	defer b.Close()
 
-	defer base.Close()
-	byteValue, _ := ioutil.ReadAll(base)
-
-	var Base NovedadesFTP
-
-	json.Unmarshal(byteValue, &Base)
-
-	for i := 0; i < len(Base.NovedadesFTP); i++ {
-		fmt.Println(Base.NovedadesFTP[i].Codigo)
-		fmt.Println(Base.NovedadesFTP[i].Accion)
-		fmt.Println(Base.NovedadesFTP[i].Resumen)
-		fmt.Println(Base.NovedadesFTP[i].Descripcion)
+	err = gocsv.UnmarshalFile(b, &base)
+	if err != nil {
+		return nil, err
 	}
+
+	return base, nil
+}
+
+func LeerCSVFTP(file *os.File) (err error) {
+	base, err := leerBase()
+	if err != nil {
+		return err
+	}
+
+	csvReader := csv.NewReader(file)
+	csvReader.Comma = '|'
+	csvReader.FieldsPerRecord = -1
+
+	csvLines, err := csvReader.ReadAll()
+	if err != nil {
+		return err
+	}
+	data := []TSVNovedad{}
+
+	for _, line := range csvLines {
+		// Verificamos que la 1ra linea sea el RNOS
+		if line[0] != "128201" {
+			break
+		}
+
+		row := TSVNovedad{
+			RNOS:             line[0],
+			CUIT:             line[1],
+			CUILTitular:      line[2],
+			Parentesco:       line[3],
+			CUIL:             line[4],
+			TipoDNI:          line[5],
+			NroDNI:           line[6],
+			Nombre:           line[7],
+			Sexo:             line[8],
+			EstadoCivil:      line[9],
+			FechaNac:         line[10],
+			Nacionalidad:     line[11],
+			Calle:            line[12],
+			NroPuerta:        line[13],
+			Piso:             line[14],
+			Depto:            line[15],
+			Localidad:        line[16],
+			CodPostal:        line[17],
+			Provincia:        line[18],
+			TipoDomicilio:    line[19],
+			Telefono:         line[20],
+			SituacionRevista: line[21],
+			Incapacidad:      line[22],
+			TipoBenTitular:   line[23],
+			FechaAltaOS:      line[24],
+			FechaCierre:      line[25],
+			Movimiento:       line[26],
+			CodigoErr:        line[27],
+			CodigoVal:        line[28],
+			CUILNuevo:        line[29],
+			CodigoDual:       line[27] + line[28],
+		}
+
+		for _, k := range base {
+			if strings.TrimSpace(row.CodigoDual) == strings.TrimSpace(k.Codigo) {
+				row.Accion = k.Accion
+				row.Descripcion = k.Descripcion
+				row.Resumen = k.Resumen
+			}
+		}
+
+		data = append(data, row)
+	}
+
+	newfile, err := os.Create("./salida.txt")
+	if err != nil {
+		log.Println(err)
+	}
+	gocsv.MarshalFile(data, newfile)
+	return nil
 }

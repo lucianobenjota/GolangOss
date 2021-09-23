@@ -12,6 +12,7 @@ import (
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/descargas"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/novedad"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/pagomono"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/procesonovedad"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -128,7 +129,7 @@ func StartBot() (err error) {
 			b.Send(m.Sender, resDoc)
 		}
 		if modo == "novedades" {
-			b.Send(m.Sender, "🤖: Modo novedades")
+			b.Send(m.Sender, "🤖 Modo novedades")
 
 			destFolder := os.Getenv("PROCESS_FOLDER")
 
@@ -171,7 +172,23 @@ func StartBot() (err error) {
 		}
 
 		if modo == "procnov" {
-			b.Send(m.Sender, "🤖: Modo de proceso de novedades")
+			b.Send(m.Sender, "🤖 Modo de proceso de novedades")
+
+			destFolder := os.Getenv("PROCESS_FOLDER")
+
+			filename := destFolder + m.Document.FileName
+
+			d := &descargas.Download{Bot: *b, Msg: *m}
+			d.DescargarArchivo(filename)
+			tsvFile, err := os.Open(filename)
+			if err != nil {
+				log.Panicln("Error al abrir el TSV: ", err)
+			}
+			defer tsvFile.Close()
+			err = procesonovedad.LeerCSVFTP(tsvFile)
+			if err != nil {
+				log.Println("err: ", err)
+			}
 		}
 
 	})
