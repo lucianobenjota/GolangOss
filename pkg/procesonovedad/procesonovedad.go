@@ -2,7 +2,6 @@ package procesonovedad
 
 import (
 	"encoding/csv"
-	"log"
 	"os"
 	"strings"
 
@@ -69,10 +68,10 @@ func leerBase() (base []*NovedadFTP, err error) {
 	return base, nil
 }
 
-func LeerCSVFTP(file *os.File) (err error) {
+func LeerCSVFTP(file *os.File) (out []byte, err error) {
 	base, err := leerBase()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	csvReader := csv.NewReader(file)
@@ -81,7 +80,7 @@ func LeerCSVFTP(file *os.File) (err error) {
 
 	csvLines, err := csvReader.ReadAll()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	data := []TSVNovedad{}
 
@@ -136,10 +135,9 @@ func LeerCSVFTP(file *os.File) (err error) {
 		data = append(data, row)
 	}
 
-	newfile, err := os.Create("./salida.txt")
+	out, err = gocsv.MarshalBytes(data)
 	if err != nil {
-		log.Println(err)
+		return nil, err
 	}
-	gocsv.MarshalFile(data, newfile)
-	return nil
+	return out, nil
 }

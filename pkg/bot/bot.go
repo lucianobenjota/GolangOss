@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -104,7 +105,7 @@ func StartBot() (err error) {
 			return
 		}
 		modo = "procnov"
-		b.Send(m.Sender, "Enviar archivo de novedad FTP")
+		b.Send(m.Sender, "Enviar archivo de novedades erroneas del FTP")
 	})
 
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
@@ -185,10 +186,45 @@ func StartBot() (err error) {
 				log.Panicln("Error al abrir el TSV: ", err)
 			}
 			defer tsvFile.Close()
-			err = procesonovedad.LeerCSVFTP(tsvFile)
+			msg, err := b.Send(m.Sender, "Procesando archivo...")
+			data, err := procesonovedad.LeerCSVFTP(tsvFile)
+
 			if err != nil {
-				log.Println("err: ", err)
+				b.Send(m.Sender, "Ocurrio un error al procesar la novedad")
+				log.Println("Error al procesar la novedad: ", err)
 			}
+			b.Delete(msg)
+			msg, err = b.Send(m.Sender, "Generando respuesta.. ")
+
+			// Creamos un archivo temporal para enviar..
+			temporaryFile, err := ioutil.TempFile("./", "*.csv")
+			if err != nil {
+				log.Panicln("Error al crear archivo temporal: ", err)
+				b.Send(m.Sender, "Error al procesar novedad..")
+			}
+			defer os.Remove(temporaryFile.Name())
+
+			if _, err := temporaryFile.Write(data); err != nil {
+				log.Panicln("Error al grabar datos en el temporal: ", err)
+				b.Send(m.Sender, "Error al procesar la novedad")
+				temporaryFile.Close()
+			}
+
+			res := &tb.Document{
+				File:     tb.FromDisk(temporaryFile.Name()),
+				FileName: "novedad.csv",
+				Caption:  "Archivo procesado",
+				MIME:     "text/csv",
+			}
+
+			b.Delete(msg)
+			_, err = b.Send(m.Sender, res)
+			if err != nil {
+				log.Fatal(err)
+				temporaryFile.Close()
+			}
+			temporaryFile.Close()
+
 		}
 
 	})
