@@ -186,15 +186,14 @@ func StartBot() (err error) {
 				log.Panicln("Error al abrir el TSV: ", err)
 			}
 			defer tsvFile.Close()
-			msg, err := b.Send(m.Sender, "Procesando archivo...")
+			msga, err := b.Send(m.Sender, "Procesando archivo...")
 			data, err := procesonovedad.LeerCSVFTP(tsvFile)
 
 			if err != nil {
 				b.Send(m.Sender, "Ocurrio un error al procesar la novedad")
 				log.Println("Error al procesar la novedad: ", err)
 			}
-			b.Delete(msg)
-			msg, err = b.Send(m.Sender, "Generando respuesta.. ")
+			msgb, err := b.Send(m.Sender, "Generando respuesta.. ")
 
 			// Creamos un archivo temporal para enviar..
 			temporaryFile, err := ioutil.TempFile("./", "*.csv")
@@ -217,13 +216,14 @@ func StartBot() (err error) {
 				MIME:     "text/csv",
 			}
 
-			b.Delete(msg)
 			_, err = b.Send(m.Sender, res)
 			if err != nil {
 				log.Fatal(err)
 				temporaryFile.Close()
 			}
 			temporaryFile.Close()
+			b.Delete(msga)
+			b.Delete(msgb)
 
 		}
 
