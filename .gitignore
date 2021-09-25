@@ -1,10 +1,10 @@
 # Binaries for programs and plugins
 *.exe
+*.sh
 *.exe~
 *.dll
 *.so
 *.dylib
-go-oss-bot
 # Test binary, built with `go test -c`
 *.test
 
@@ -14,4 +14,6 @@ go-oss-bot
 # Dependency directories (remove the comment below to include it)
 # vendor/
 *.env
-
+*.xlsx
+*.xls
+*.csv
