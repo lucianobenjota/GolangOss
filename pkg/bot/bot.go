@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"bytes"
 	"io/ioutil"
 	"log"
 	"os"
@@ -86,10 +87,20 @@ func StartBot() (err error) {
 		modo = "pagomonotributo"
 		b.Delete(m)
 		b.Send(m.Sender, "Iniciando scrap de monotributo")
-		err := pagomono.IniciarScrap()
-		if err != nil {
-			log.Panicln(err)
-		}
+		
+		startWebDriver := pagomono.StartWebDriver()
+		defer startWebDriver.Stop()
+
+		driver := pagomono.IniciarDriver()
+
+		pagomono.NavegarASuperintendencia(driver)
+		img := pagomono.ObtenerCaptcha(driver)
+
+		p := &tb.Photo{File: tb.FromReader(bytes.NewReader(img))}
+
+		b.Send(m.Sender, p)
+
+		defer driver.Close()
 	})
 
 	b.Handle(&btnNovedades, func(m *tb.Message) {
