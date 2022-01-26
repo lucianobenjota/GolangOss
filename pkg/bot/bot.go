@@ -203,7 +203,8 @@ func StartBot() (err error) {
 				fuente := webdriver.ObtenerFuente()
 
 				if strings.Contains(fuente, "AAAAAA") {
-					pagomono.ExtractorTablas(fuente)
+					pagomono.ExtraerYRegistrarPago(fuente, cuit)
+					log.Println("Cargado con exito")
 				}
 
 				cuit = ""

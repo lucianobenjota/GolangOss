@@ -1,12 +1,15 @@
 package pagomono
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/monotributista"
 	"github.com/tebeka/selenium"
 	"github.com/tebeka/selenium/chrome"
 )
@@ -103,34 +106,42 @@ func PrettyPrint(v interface{}) (err error) {
 	return
 }
 
-type PagoSSS struct {
-	periodo string
-	fecha_pago string
-	concepto string
-	nro_secuencia string
-	credito string
-	debito string 
-	rnos string
+func checkErr(err error) {
+	if err != nil {
+		log.Panicln(err)
+	}
 }
 
-func GeneradorPago(rows [][]string) {
-	var pagos []PagoSSS
+func connectDB() *sql.DB {
+	db, err := sql.Open("sqlite3", "./monotributo.db")
+	checkErr(err)
+	return db
+}
+
+func GeneradorPago(rows [][]string, cuit string) {
+	const periodoLayout = "200601"
+	const fechaLayout = "02-01-2006"
+	db := connectDB()
 	for _, row := range rows {
-		v := PagoSSS{}
-		v.periodo = row[0]
-		v.fecha_pago = row[1]
-		v.concepto = strings.TrimSpace(row[2])
-		v.nro_secuencia = row[3]
-		v.credito = row[4]
-		v.debito = row[5]
-		v.rnos = row[6]
-		pagos = append(pagos, v)
+		v := monotributista.Pago{}
+		v.Cuit = cuit
+		v.Periodo, _ = time.Parse(periodoLayout, row[0])
+		v.Fecha, _ = time.Parse(fechaLayout, row[1])
+		v.Concepto = strings.TrimSpace(row[2])
+		v.Nro_secuencia = row[3]
+		v.Credito = row[4]
+		v.Debito = row[5]
+		v.Rnos = row[6]
+		err := monotributista.RegistrarPago(db, v)
+		if err != nil {
+			log.Panicln(err)
+		}
 	}
-	log.Println(pagos)
+	defer db.Close()
 }
 
 // Extractor de tablas
-func ExtractorTablas(fuente string) {
+func ExtraerYRegistrarPago(fuente string, cuit string) {
 	var headings, row []string
 	var rows [][]string
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(fuente))
@@ -153,12 +164,8 @@ func ExtractorTablas(fuente string) {
 			row = nil
 		})
 	})
-	log.Println("Headings:")
-	PrettyPrint(headings)
-	log.Println("Rows:")
-	PrettyPrint(rows)
-	
-	GeneradorPago(rows)
+
+	GeneradorPago(rows, cuit)
 }
 
 // Verifica que el driver se encuentre en la pag de pagos de mono
