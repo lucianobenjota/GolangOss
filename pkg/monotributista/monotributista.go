@@ -12,6 +12,11 @@ type Pago struct {
 	cuit string
 	fecha time.Time
 	periodo time.Time
+	concepto string
+	nro_secuencia string
+	credito string
+	debito string 
+	rnos string
 }
 
 // Monotributista
@@ -59,4 +64,11 @@ func ListarMonotributistas(db *sql.DB) []Mononotributista {
 	}
 	
 	return monos
+}
+
+func RegistrarPago(db *sql.DB, pago Pago) {
+	stmt, _ := db.Prepare("INSERT INTO pagos (id, cuit, fecha, periodo, concepto, nro_secuencia, credito, debito, rnos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	stmt.Exec(nil, pago.cuit, pago.fecha, pago.periodo, pago.concepto, pago.nro_secuencia, pago.credito, pago.debito, pago.rnos)
+	defer stmt.Close()
+	log.Printf("Se registro correctamente el pago del cuit %s", pago.cuit)
 }
