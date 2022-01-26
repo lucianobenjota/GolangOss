@@ -158,6 +158,11 @@ func StartBot() (err error) {
 			b.Send(m.Sender, "consultando cuit "+ cuit)
 		}
 
+		if modo == "finalizadriver" {
+			webdriver.FinalizarScrapping()
+			modo = "esperando"
+		}
+
 		if modo == "generarpago" {
 			if len(cuit) == 0 {
 				cuit = pagomono.FormatoCuit(m.Text)
@@ -204,7 +209,11 @@ func StartBot() (err error) {
 
 				if strings.Contains(fuente, "AAAAAA") {
 					pagomono.ExtraerYRegistrarPago(fuente, cuit)
-					log.Println("Cargado con exito")
+					if err != nil {
+						b.Send(m.Sender, "Ocurrio un error al registrar el pago")
+						log.Panicln(err)
+					}
+					b.Send(m.Sender, "Pago registrado correctamente")
 				}
 
 				cuit = ""

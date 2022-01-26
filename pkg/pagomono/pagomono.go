@@ -113,12 +113,12 @@ func checkErr(err error) {
 }
 
 func connectDB() *sql.DB {
-	db, err := sql.Open("sqlite3", "./monotributo.db")
+	db, err := sql.Open("sqlite3", "./monotributos.db")
 	checkErr(err)
 	return db
 }
 
-func GeneradorPago(rows [][]string, cuit string) {
+func GeneradorPago(rows [][]string, cuit string) (err error) {
 	const periodoLayout = "200601"
 	const fechaLayout = "02-01-2006"
 	db := connectDB()
@@ -132,21 +132,22 @@ func GeneradorPago(rows [][]string, cuit string) {
 		v.Credito = row[4]
 		v.Debito = row[5]
 		v.Rnos = row[6]
-		err := monotributista.RegistrarPago(db, v)
-		if err != nil {
-			log.Panicln(err)
-		}
+		err = monotributista.RegistrarPago(db, v)
 	}
 	defer db.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Extractor de tablas
-func ExtraerYRegistrarPago(fuente string, cuit string) {
+func ExtraerYRegistrarPago(fuente string, cuit string) (err error){
 	var headings, row []string
 	var rows [][]string
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(fuente))
 	if err != nil {
-		log.Panicln("Error al extraer las tablas:", err)
+		return err
 	}
 	doc.Find("table").Each(func(index int, tablehtml *goquery.Selection) {
 		tablehtml.Find("tr").Each(func(indextr int, rowhtml *goquery.Selection) {
@@ -165,7 +166,11 @@ func ExtraerYRegistrarPago(fuente string, cuit string) {
 		})
 	})
 
-	GeneradorPago(rows, cuit)
+	err = GeneradorPago(rows, cuit)
+	if err != nil {
+		return err
+	}
+	return
 }
 
 // Verifica que el driver se encuentre en la pag de pagos de mono

@@ -69,24 +69,12 @@ func ListarMonotributistas(db *sql.DB, ) []Mononotributista {
 }
 
 // Registramos el pago del monotributista en la base datos
-func RegistrarPago(db *sql.DB, pago Pago) (err error) {
+func RegistrarPago(db *sql.DB, pago Pago) (err error){
 	q := `INSERT INTO 
 					pagos(cuit, fecha, periodo, concepto, nro_secuencia, credito, debito, rnos)
 				VALUES(?, ?, ?, ?, ?, ?, ?, ?);`
 
 	stmt, _ := db.Prepare(q)
-	
-	log.Println(
-		pago.Cuit, 
-		pago.Fecha, 
-		pago.Periodo, 
-		pago.Concepto, 
-		pago.Nro_secuencia,
-		pago.Credito,
-		pago.Nro_secuencia,
-		pago.Credito,
-		pago.Debito,
-		pago.Rnos)
 
 	_, err = stmt.Exec(
 		pago.Cuit,
@@ -97,13 +85,14 @@ func RegistrarPago(db *sql.DB, pago Pago) (err error) {
 		pago.Credito, 
 		pago.Debito, 
 		pago.Rnos)
-	
+
 	if err != nil {
 		return err
 	}
-
 	defer stmt.Close()
-
+	// rows, _ := db.Query("SELECT * FROM pagos")
+	// defer rows.Close()
+	// log.Println(rows)
 	log.Printf("Se registro correctamente el pago del cuit %s", pago.Cuit)
 	return
 }
