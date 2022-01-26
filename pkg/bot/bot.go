@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -49,13 +50,13 @@ func StartBot() (err error) {
 		menu             = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true}
 		btnCompañia      = menu.Text("🏢 Compañia")
 		btnAyuda         = menu.Text("⚙ Ayuda")
-		btnScrap         = menu.Text("🤖 Pagos Monotributo")
+		btnMonotributos         = menu.Text("🙈 Monotributistas")
 		btnNovedades     = menu.Text("🙌 Generar Novedades")
 		btnProcNovedades = menu.Text("👁 Procesar Novedad")
 	)
 
 	menu.Reply(
-		menu.Row(btnCompañia, btnScrap),
+		menu.Row(btnCompañia, btnMonotributos),
 		menu.Row(btnNovedades, btnProcNovedades),
 		menu.Row(btnAyuda),
 	)
@@ -80,27 +81,48 @@ func StartBot() (err error) {
 		b.Send(m.Sender, "Envie el archivo de Reporte de compañia")
 	})
 
-	b.Handle(&btnScrap, func(m *tb.Message) {
+	var (
+		menumonos = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true, ForceReply: true}
+		btnListaMonos = menumonos.Text("🐵 Lista de monotributos")
+		btnGenerarPago = menumonos.Text("💰 Generar pago")
+		btnBuscarMono = menumonos.Text("🔎 Consultar monotributo")
+	)
+
+	menumonos.Reply(
+		menumonos.Row(btnBuscarMono, btnListaMonos),
+		menumonos.Row(btnGenerarPago),
+	)
+
+	b.Handle(&btnGenerarPago, func(m *tb.Message) {
+		if m.Chat.ID != tgUserId {
+			return
+		}
+		modo = "generarpago"
+		b.Delete(m)
+		b.Send(m.Sender, "CUIT a generar?")
+	})
+
+	b.Handle(&btnBuscarMono, func(m *tb.Message) {
+		if m.Chat.ID != tgUserId {
+			return
+		}
+
+		modo = "consultamono"
+
+		b.Delete(m)
+		b.Send(m.Sender, "Envia el CUIT del monotributista")
+		
+	})
+
+	b.Handle(&btnMonotributos, func(m *tb.Message) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
 		modo = "pagomonotributo"
 		b.Delete(m)
-		b.Send(m.Sender, "Iniciando scrap de monotributo")
+		b.Send(m.Sender, "Selecciona una opcion para los monotributos", menumonos)
 		
-		startWebDriver := pagomono.StartWebDriver()
-		defer startWebDriver.Stop()
 
-		driver := pagomono.IniciarDriver()
-
-		pagomono.NavegarASuperintendencia(driver)
-		img := pagomono.ObtenerCaptcha(driver)
-
-		p := &tb.Photo{File: tb.FromReader(bytes.NewReader(img))}
-
-		b.Send(m.Sender, p)
-
-		defer driver.Close()
 	})
 
 	b.Handle(&btnNovedades, func(m *tb.Message) {
@@ -119,6 +141,81 @@ func StartBot() (err error) {
 		b.Send(m.Sender, "Enviar archivo de novedades erroneas del FTP")
 	})
 
+	webdriver := pagomono.Scrap{Estado: "idle"}
+	var (
+		cuit, cuitOriginal, captcha string
+	)
+
+	//Maneja los textos enviados al bot que no sean los botones
+	b.Handle(tb.OnText, func(m *tb.Message) {
+		if m.Chat.ID != tgUserId {
+			return
+		}
+
+		if modo == "consultamono" {
+			log.Println("consultamono: ", m.Text)
+			cuit = m.Text
+			b.Send(m.Sender, "consultando cuit "+ cuit)
+		}
+
+		if modo == "generarpago" {
+			if len(cuit) == 0 {
+				cuit = pagomono.FormatoCuit(m.Text)
+				cuitOriginal = m.Text
+			}
+
+			log.Println("Iniciando servidor de webdriver")
+
+			if webdriver.Estado != "iniciado"{
+				webdriver.NuevoServicio()
+				log.Println("Iniciando driver")
+				webdriver.IniciarDriver()
+				log.Println("Navegando a ssssalud")
+			}
+
+			if !webdriver.EsSuper() {
+				webdriver.NavegarASSS()	
+			}
+
+			log.Println("captcha:", captcha)
+			log.Println("cuit:", cuit)
+			log.Println(m.Text)
+
+			if len(captcha) == 0 {
+				if m.Text != cuitOriginal {
+					captcha = m.Text
+				} else {
+					log.Println("Obteniendo captcha..")
+					img := webdriver.ObtenerCaptcha()
+					p := &tb.Photo{File: tb.FromReader(bytes.NewReader(img))}
+					b.Send(m.Sender, p)
+					b.Send(m.Sender, "Captcha?")
+				}
+			}
+
+			if len(captcha) > 0 && len(cuit) > 0{
+				log.Println("Submit de página")
+				log.Println("captcha:", captcha, "largo:", len(captcha))
+				log.Println("cuit:", cuit, "largo:", len(cuit))
+				webdriver.RellenarCUIT(cuit)
+				webdriver.RellenarCaptcha(captcha)
+				webdriver.SubmitPagina()
+				fuente := webdriver.ObtenerFuente()
+
+				if strings.Contains(fuente, "AAAAAA") {
+					pagomono.ExtractorTablas(fuente)
+				}
+
+				cuit = ""
+				captcha = ""
+				modo = "esperando"
+			}
+
+		}
+
+	})
+
+	// Maneja los archivos enviados al bot
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
 		if modo == "compañia" {
 			b.Send(m.Sender, "🤖 Modo compañia")
@@ -243,6 +340,7 @@ func StartBot() (err error) {
 	b.Start()
 	return err
 }
+
 
 func getTgApiKey() (res map[string]string, err error) {
 	// Obtiene las credenciales del archivo de enotrno
