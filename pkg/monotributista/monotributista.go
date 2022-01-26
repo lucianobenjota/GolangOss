@@ -20,12 +20,13 @@ type Mononotributista struct {
 	cuit string
 	nombre string
 	estado string
+	categoria string
 }
 
 // Inserta un nuevo monotributista en la base de datos
 func NuevoMonotributista(db *sql.DB, mono Mononotributista) {
-	stmt, _ := db.Prepare("INSERT INTO monotributistas (id, cuit, nombre, estado) VALUES (?, ?, ?, ?)")
-	stmt.Exec(nil, mono.cuit, mono.nombre, mono.estado)
+	stmt, _ := db.Prepare("INSERT INTO monotributistas (id, cuit, nombre, categoria, estado) VALUES (?, ?, ?, ?, ?)")
+	stmt.Exec(nil, mono.cuit, mono.nombre, mono.categoria, mono.estado)
 	defer stmt.Close()
 	log.Printf("se agrego monotributita con el cuit %s", mono.cuit)
 }
@@ -44,7 +45,7 @@ func ListarMonotributistas(db *sql.DB) []Mononotributista {
 
 	for rows.Next() {
 		mono := Mononotributista{}
-		err = rows.Scan(&mono.id, &mono.cuit, &mono.nombre, &mono.estado)
+		err = rows.Scan(&mono.id, &mono.cuit, &mono.nombre, &mono.categoria, &mono.estado)
 		if err != nil {
 			log.Panic("Error al consultar monotributista")
 		}

@@ -8,6 +8,8 @@ require (
 )
 
 require (
+	github.com/PuerkitoBio/goquery v1.8.0 // indirect
+	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/djimenez/iconv-go v0.0.0-20160305225143-8960e66bd3da // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
@@ -30,7 +32,7 @@ require (
 	github.com/tebeka/selenium v0.9.9 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
-	golang.org/x/net v0.0.0-20210423184538-5f58ad60dda6 // indirect
+	golang.org/x/net v0.0.0-20210916014120-12bc252f5db8 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
