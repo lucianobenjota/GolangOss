@@ -4,19 +4,21 @@ import (
 	"database/sql"
 	"log"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // Pago de monotributista
 type Pago struct {
-	id int
-	cuit string
-	fecha time.Time
-	periodo time.Time
-	concepto string
-	nro_secuencia string
-	credito string
-	debito string 
-	rnos string
+	Id int
+	Cuit string
+	Fecha time.Time
+	Periodo time.Time
+	Concepto string
+	Nro_secuencia string
+	Credito string
+	Debito string 
+	Rnos string
 }
 
 // Monotributista
@@ -37,7 +39,7 @@ func NuevoMonotributista(db *sql.DB, mono Mononotributista) {
 }
 
 // Listar monotributistas
-func ListarMonotributistas(db *sql.DB) []Mononotributista {
+func ListarMonotributistas(db *sql.DB, ) []Mononotributista {
 	rows, _ := db.Query("SELECT * FROM monotributistas")
 	defer rows.Close()
 
@@ -66,9 +68,42 @@ func ListarMonotributistas(db *sql.DB) []Mononotributista {
 	return monos
 }
 
-func RegistrarPago(db *sql.DB, pago Pago) {
-	stmt, _ := db.Prepare("INSERT INTO pagos (id, cuit, fecha, periodo, concepto, nro_secuencia, credito, debito, rnos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-	stmt.Exec(nil, pago.cuit, pago.fecha, pago.periodo, pago.concepto, pago.nro_secuencia, pago.credito, pago.debito, pago.rnos)
+// Registramos el pago del monotributista en la base datos
+func RegistrarPago(db *sql.DB, pago Pago) (err error) {
+	q := `INSERT INTO 
+					pagos(cuit, fecha, periodo, concepto, nro_secuencia, credito, debito, rnos)
+				VALUES(?, ?, ?, ?, ?, ?, ?, ?);`
+
+	stmt, _ := db.Prepare(q)
+	
+	log.Println(
+		pago.Cuit, 
+		pago.Fecha, 
+		pago.Periodo, 
+		pago.Concepto, 
+		pago.Nro_secuencia,
+		pago.Credito,
+		pago.Nro_secuencia,
+		pago.Credito,
+		pago.Debito,
+		pago.Rnos)
+
+	_, err = stmt.Exec(
+		pago.Cuit,
+		pago.Fecha, 
+		pago.Periodo, 
+		pago.Concepto, 
+		pago.Nro_secuencia, 
+		pago.Credito, 
+		pago.Debito, 
+		pago.Rnos)
+	
+	if err != nil {
+		return err
+	}
+
 	defer stmt.Close()
-	log.Printf("Se registro correctamente el pago del cuit %s", pago.cuit)
+
+	log.Printf("Se registro correctamente el pago del cuit %s", pago.Cuit)
+	return
 }
