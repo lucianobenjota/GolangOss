@@ -123,6 +123,7 @@ func GeneradorPago(rows [][]string, cuit string) (err error) {
 	const fechaLayout = "02-01-2006"
 	db := connectDB()
 	for _, row := range rows {
+		var esUnico bool
 		v := monotributista.Pago{}
 		v.Cuit = cuit
 		v.Periodo, _ = time.Parse(periodoLayout, row[0])
@@ -132,8 +133,14 @@ func GeneradorPago(rows [][]string, cuit string) (err error) {
 		v.Credito = row[4]
 		v.Debito = row[5]
 		v.Rnos = row[6]
-		err = monotributista.RegistrarPago(db, v)
+		// Verificamos que el pago no exista en la base
+		// para insertar uno nuevo
+		esUnico, err = monotributista.VerificarPago(db, v)
+		if esUnico {
+			err = monotributista.RegistrarPago(db, v)
+		}
 	}
+
 	defer db.Close()
 	if err != nil {
 		return err

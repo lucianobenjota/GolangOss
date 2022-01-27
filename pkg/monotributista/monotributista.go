@@ -68,6 +68,35 @@ func ListarMonotributistas(db *sql.DB, ) []Mononotributista {
 	return monos
 }
 
+func VerificarPago(db *sql.DB, pago Pago) (existe bool, err error) {
+	q := `SELECT COUNT(*) FROM pagos
+				WHERE
+					(cuit = ? AND
+					fecha = ? AND
+					periodo = ? AND
+					concepto = ? AND
+					nro_secuencia = ? AND
+					credito = ? AND
+					debito = ? AND
+					rnos = ?)
+					`
+	var cuenta int
+	db.QueryRow(q, 
+		pago.Cuit,
+		pago.Fecha,
+		pago.Periodo,
+		pago.Concepto,
+		pago.Nro_secuencia,
+		pago.Credito,
+		pago.Debito,
+		pago.Rnos,).Scan(&cuenta)
+		
+	if err != nil {
+		return false, err
+	}
+	return cuenta == 0, nil	
+}
+
 // Registramos el pago del monotributista en la base datos
 func RegistrarPago(db *sql.DB, pago Pago) (err error){
 	q := `INSERT INTO 

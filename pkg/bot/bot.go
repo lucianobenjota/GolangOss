@@ -85,12 +85,13 @@ func StartBot() (err error) {
 		menumonos = &tb.ReplyMarkup{ResizeReplyKeyboard: true, OneTimeKeyboard: true, ForceReply: true}
 		btnListaMonos = menumonos.Text("🐵 Lista de monotributos")
 		btnGenerarPago = menumonos.Text("💰 Generar pago")
+		btnFinalizarProc = menumonos.Text("💁 Finalizar proceso")
 		btnBuscarMono = menumonos.Text("🔎 Consultar monotributo")
 	)
 
 	menumonos.Reply(
 		menumonos.Row(btnBuscarMono, btnListaMonos),
-		menumonos.Row(btnGenerarPago),
+		menumonos.Row(btnGenerarPago, btnFinalizarProc), 
 	)
 
 	b.Handle(&btnGenerarPago, func(m *tb.Message) {
@@ -145,6 +146,14 @@ func StartBot() (err error) {
 	var (
 		cuit, cuitOriginal, captcha string
 	)
+
+	b.Handle(&btnFinalizarProc, func(m *tb.Message) {
+		if m.Chat.ID != tgUserId {
+			return
+		}
+		b.Send(m.Sender, "Finalizando proceso..")
+		modo = "finalizadriver"
+	})
 
 	//Maneja los textos enviados al bot que no sean los botones
 	b.Handle(tb.OnText, func(m *tb.Message) {
