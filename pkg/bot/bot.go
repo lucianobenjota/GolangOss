@@ -169,7 +169,9 @@ func StartBot() (err error) {
 
 		if modo == "finalizadriver" {
 			webdriver.FinalizarScrapping()
-			modo = "esperando"
+			cuit = ""
+			captcha = ""
+			modo = "finalizado"
 		}
 
 		if modo == "generarpago" {
@@ -223,13 +225,28 @@ func StartBot() (err error) {
 						log.Panicln(err)
 					}
 					b.Send(m.Sender, "Pago registrado correctamente")
+					
 				}
 
 				cuit = ""
 				captcha = ""
 				modo = "esperando"
 			}
+		}
 
+		if modo == "esperando" {
+			if m.Text != "Nuevo pago" {
+				b.Send(m.Sender, "Nuevo pago?")
+			}
+			if m.Text == "si" {
+				modo = "generarpago"
+				b.Send(m.Sender, "CUIT a generar?")
+			}
+			if m.Text == "no" {
+				webdriver.FinalizarScrapping()
+				modo = "finalizado"
+			}
+			log.Println("resp: ", m.Text)
 		}
 
 	})

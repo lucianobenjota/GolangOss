@@ -68,6 +68,7 @@ func ListarMonotributistas(db *sql.DB, ) []Mononotributista {
 	return monos
 }
 
+// Verifica que el pago no exista en la db
 func VerificarPago(db *sql.DB, pago Pago) (existe bool, err error) {
 	q := `SELECT COUNT(*) FROM pagos
 				WHERE
