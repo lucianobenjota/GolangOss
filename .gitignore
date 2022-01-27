@@ -19,3 +19,4 @@
 *.csv
 *.db
 monotributos.db
+.vscode/launch.json
