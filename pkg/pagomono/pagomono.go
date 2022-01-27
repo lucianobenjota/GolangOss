@@ -118,7 +118,7 @@ func connectDB() *sql.DB {
 	return db
 }
 
-func GeneradorPago(rows [][]string, cuit string) (err error) {
+func GeneradorPago(rows [][]string, cuit string) (cantidadPagos int, err error) {
 	const periodoLayout = "200601"
 	const fechaLayout = "02-01-2006"
 	db := connectDB()
@@ -138,23 +138,25 @@ func GeneradorPago(rows [][]string, cuit string) (err error) {
 		esUnico, err = monotributista.VerificarPago(db, v)
 		if esUnico {
 			err = monotributista.RegistrarPago(db, v)
+			cantidadPagos++
 		}
 	}
 
 	defer db.Close()
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return cantidadPagos, nil
 }
 
-// Extractor de tablas
-func ExtraerYRegistrarPago(fuente string, cuit string) (err error){
+// Extrae los datos de la fuente y registra el pago, devuelve la cantidad de
+// pagos registrados
+func ExtraerYRegistrarPago(fuente string, cuit string) (cantidad int, err error){
 	var headings, row []string
 	var rows [][]string
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(fuente))
 	if err != nil {
-		return err
+		return 0, err
 	}
 	doc.Find("table").Each(func(index int, tablehtml *goquery.Selection) {
 		tablehtml.Find("tr").Each(func(indextr int, rowhtml *goquery.Selection) {
@@ -173,9 +175,9 @@ func ExtraerYRegistrarPago(fuente string, cuit string) (err error){
 		})
 	})
 
-	err = GeneradorPago(rows, cuit)
+	cantidad, err = GeneradorPago(rows, cuit)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	return
 }

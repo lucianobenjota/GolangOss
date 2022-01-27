@@ -2,6 +2,7 @@ package bot
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -183,10 +184,12 @@ func StartBot() (err error) {
 			log.Println("Iniciando servidor de webdriver")
 
 			if webdriver.Estado != "iniciado"{
+				b.Send(m.Sender, "Iniciando driver..")
 				webdriver.NuevoServicio()
 				log.Println("Iniciando driver")
 				webdriver.IniciarDriver()
 				log.Println("Navegando a ssssalud")
+				b.Send(m.Sender, "Driver iniciado correctamente, rescatando captcha..")
 			}
 
 			if !webdriver.EsSuper() {
@@ -219,13 +222,20 @@ func StartBot() (err error) {
 				fuente := webdriver.ObtenerFuente()
 
 				if strings.Contains(fuente, "AAAAAA") {
-					pagomono.ExtraerYRegistrarPago(fuente, cuit)
+					b.Send(m.Sender, "Registrando pagos..")
+					cantidad, err := pagomono.ExtraerYRegistrarPago(fuente, cuit)
 					if err != nil {
 						b.Send(m.Sender, "Ocurrio un error al registrar el pago")
 						log.Panicln(err)
 					}
-					b.Send(m.Sender, "Pago registrado correctamente")
-					
+					if cantidad == 0 {
+						b.Send(m.Sender, "No se encontraron nuevos pagos para el monotributo")
+					} else {
+						mensaje := fmt.Sprintf("Se registraron %d pagos", cantidad)
+						b.Send(m.Sender, mensaje)
+					}
+				} else if strings.Contains(fuente, "CCCCCC") {
+					b.Send(m.Sender, "Captcha incorrecto")
 				}
 
 				cuit = ""
@@ -235,9 +245,6 @@ func StartBot() (err error) {
 		}
 
 		if modo == "esperando" {
-			if m.Text != "Nuevo pago" {
-				b.Send(m.Sender, "Nuevo pago?")
-			}
 			if m.Text == "si" {
 				modo = "generarpago"
 				b.Send(m.Sender, "CUIT a generar?")
@@ -245,6 +252,9 @@ func StartBot() (err error) {
 			if m.Text == "no" {
 				webdriver.FinalizarScrapping()
 				modo = "finalizado"
+			}
+			if m.Text != "Nuevo pago" {
+				b.Send(m.Sender, "Nuevo pago?")
 			}
 			log.Println("resp: ", m.Text)
 		}
