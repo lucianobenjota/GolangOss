@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -14,9 +17,18 @@ import (
 	"github.com/tebeka/selenium/chrome"
 )
 
-const (
-	seleniumPath = "/home/luciano/go/pkg/mod/github.com/tebeka/selenium@v0.9.9/vendor/selenium-server.jar"
-	chromeDriver = "/home/luciano/go/pkg/mod/github.com/tebeka/selenium@v0.9.9/vendor/chromedriver"
+func getPath() string {
+	ex, err := os.Executable()
+	if err != nil {
+		log.Panicln(err)
+	}
+	execPath := filepath.Dir(ex)
+	return execPath
+}
+
+var (
+	seleniumPath = path.Join(getPath(), "/vendor/selenium-server.jar")
+	chromeDriver = path.Join(getPath(), "/vendor/chromedriver")
 	port         = 8080
 )
 
@@ -36,6 +48,7 @@ func (s *Scrap) NuevoServicio() *selenium.Service {
 		//selenium.Output(os.Stderr),
 	}	
 	selenium.SetDebug(false)
+	log.Println(seleniumPath)
 	service, err := selenium.NewSeleniumService(seleniumPath, port, opts...)
 	if err != nil {
 		fmt.Println("error al iniciar el servicio de chromedriver: ", err.Error())
@@ -54,7 +67,8 @@ func (s *Scrap) FinalizarScrapping() {
 }
 
 func (s *Scrap) IniciarDriver() selenium.WebDriver {
-	c := chrome.Capabilities{Path: "/usr/bin/google-chrome-stable"}
+	// c := chrome.Capabilities{Path: "/usr/bin/google-chrome-stable"}
+	c := chrome.Capabilities{Path: "./vendor/chrome-linux/chrome"}
 	caps := selenium.Capabilities{"browserName": "chrome"}
 	caps.AddChrome(c)
 
@@ -98,6 +112,7 @@ func FormatoCuit(cuit string) (resCuit string) {
 	return resCuit
 }
 
+// Imprime las variables como tablas json
 func PrettyPrint(v interface{}) (err error) {
 	b, err := json.MarshalIndent(v, "", "  ")
 	if err == nil {
@@ -180,6 +195,7 @@ func ExtraerYRegistrarPago(fuente string, cuit string) (cantidad int, err error)
 		return 0, err
 	}
 	return
+
 }
 
 // Verifica que el driver se encuentre en la pag de pagos de mono
