@@ -19,3 +19,4 @@ vendor/
 *.csv
 *.db
 .vscode/launch.json
+coverage
