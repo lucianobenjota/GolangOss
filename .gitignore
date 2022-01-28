@@ -12,11 +12,10 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 *.env
 *.xlsx
 *.xls
 *.csv
 *.db
-monotributos.db
 .vscode/launch.json
