@@ -14,15 +14,18 @@ import (
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/compania"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/convertidor"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/descargas"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/modoapp"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/novedad"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/pagomono"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/procesonovedad"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
-var modo string
+
 var tgApiKey string
 var tgUserId string
+
+var modo modoapp.ModoApp
 
 func StartBot() (err error) {
 	// Inicia el Bot de telegram
@@ -62,24 +65,21 @@ func StartBot() (err error) {
 		menu.Row(btnAyuda),
 	)
 
+	// Comando para iniciar el bot
 	b.Handle("/start", func(m *tb.Message) {
-
 		if m.Chat.ID != tgUserId {
-			log.Printf("El id %v envió un mensaje", m.Chat.ID)
-			return
+			log.Printf("El usuario %v inicio el bot", m.Chat.ID)
 		}
-
 		b.Send(m.Sender, "Bienvenido al megabot", menu)
-		log.Printf("id: %v", m.Chat.ID)
 	})
 
 	b.Handle(&btnCompañia, func(m *tb.Message) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
-		modo = "compañia"
+		modo = modo.Set(modoapp.Compania)
 		b.Delete(m)
-		b.Send(m.Sender, "Envie el archivo de Reporte de compañia")
+		b.Send(m.Sender, "Envíe el archivo de reporte de compañia")
 	})
 
 	var (
@@ -95,21 +95,15 @@ func StartBot() (err error) {
 		menumonos.Row(btnGenerarPago, btnFinalizarProc), 
 	)
 
-	b.Handle(&btnGenerarPago, func(m *tb.Message) {
-		if m.Chat.ID != tgUserId {
-			return
-		}
-		modo = "generarpago"
-		b.Delete(m)
-		b.Send(m.Sender, "CUIT a generar?")
-	})
+
 
 	b.Handle(&btnBuscarMono, func(m *tb.Message) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
 
-		modo = "consultamono"
+		modo = modo.Set("consultamono")
+		modo = modo.Set(modoapp.ConsultarMonotributo)
 
 		b.Delete(m)
 		b.Send(m.Sender, "Envia el CUIT del monotributista")
@@ -120,18 +114,16 @@ func StartBot() (err error) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
-		modo = "pagomonotributo"
+		modo = modo.Set(modoapp.PagoMonotributo)
 		b.Delete(m)
 		b.Send(m.Sender, "Selecciona una opcion para los monotributos", menumonos)
-		
-
 	})
 
 	b.Handle(&btnNovedades, func(m *tb.Message) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
-		modo = "novedades"
+		modo = modo.Set(modoapp.Novedades)
 		b.Send(m.Sender, "Enviar un archivo de reporte con las novedades")
 	})
 
@@ -139,7 +131,7 @@ func StartBot() (err error) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
-		modo = "procnov"
+		modo = modo.Set(modoapp.ProcesarNovedades)
 		b.Send(m.Sender, "Enviar archivo de novedades erroneas del FTP")
 	})
 
@@ -153,29 +145,38 @@ func StartBot() (err error) {
 			return
 		}
 		b.Send(m.Sender, "Finalizando proceso..")
-		modo = "finalizadriver"
+		modo = modo.Set(modoapp.FinalizarWebDriver)
 	})
 
-	//Maneja los textos enviados al bot que no sean los botones
+	b.Handle(&btnGenerarPago, func(m *tb.Message) {
+		if m.Chat.ID != tgUserId {
+			return
+		}
+		modo = modo.Set(modoapp.GenerarPagos)
+		b.Delete(m)
+		b.Send(m.Sender, "CUIT a generar?")
+	})
+
+	// Maneja los textos enviados al bot que no sean los botones
 	b.Handle(tb.OnText, func(m *tb.Message) {
 		if m.Chat.ID != tgUserId {
 			return
 		}
 
-		if modo == "consultamono" {
+		if modo.EsConsultaMono() {
 			log.Println("consultamono: ", m.Text)
 			cuit = m.Text
 			b.Send(m.Sender, "consultando cuit "+ cuit)
 		}
 
-		if modo == "finalizadriver" {
+		if modo.EsFinalizarWebDriver() {
 			webdriver.FinalizarScrapping()
 			cuit = ""
 			captcha = ""
-			modo = "finalizado"
+			modo.Set(modoapp.FinalizarWebDriver)
 		}
 
-		if modo == "generarpago" {
+		if modo.EsGenerarPagos() {
 			if len(cuit) == 0 {
 				cuit = pagomono.FormatoCuit(m.Text)
 				cuitOriginal = m.Text
@@ -204,7 +205,6 @@ func StartBot() (err error) {
 				if m.Text != cuitOriginal {
 					captcha = m.Text
 				} else {
-					log.Println("Obteniendo captcha..")
 					img := webdriver.ObtenerCaptcha()
 					p := &tb.Photo{File: tb.FromReader(bytes.NewReader(img))}
 					b.Send(m.Sender, p)
@@ -240,18 +240,18 @@ func StartBot() (err error) {
 
 				cuit = ""
 				captcha = ""
-				modo = "esperando"
+				modo = modo.Set(modoapp.EsperandoWebdriver)
 			}
 		}
 
-		if modo == "esperando" {
+		if modo.EsEsperandoWebdriver() {
 			if m.Text == "si" {
-				modo = "generarpago"
+				modo = modo.Set(modoapp.GenerarPagos)
 				b.Send(m.Sender, "CUIT a generar?")
 			}
 			if m.Text == "no" {
 				webdriver.FinalizarScrapping()
-				modo = "finalizado"
+				modo = modo.Set(modoapp.FinalizarWebDriver)
 			}
 			if m.Text != "Nuevo pago" {
 				b.Send(m.Sender, "Nuevo pago?")
@@ -261,9 +261,9 @@ func StartBot() (err error) {
 
 	})
 
-	// Maneja los archivos enviados al bot
+// Maneja los archivos enviados al bot
 	b.Handle(tb.OnDocument, func(m *tb.Message) {
-		if modo == "compañia" {
+		if modo.EsCompania() {
 			b.Send(m.Sender, "🤖 Modo compañia")
 			destFolder := os.Getenv("PROCESS_FOLDER")
 			filename := destFolder + m.Document.FileName
@@ -283,7 +283,7 @@ func StartBot() (err error) {
 			}
 			b.Send(m.Sender, resDoc)
 		}
-		if modo == "novedades" {
+		if modo.EsNovedaes() {
 			b.Send(m.Sender, "🤖 Modo novedades")
 
 			destFolder := os.Getenv("PROCESS_FOLDER")
@@ -326,7 +326,7 @@ func StartBot() (err error) {
 			b.Send(m.Sender, resDoc)
 		}
 
-		if modo == "procnov" {
+		if modo.EsProcesarNovedades() {
 			b.Send(m.Sender, "🤖 Modo de proceso de novedades")
 
 			destFolder := os.Getenv("PROCESS_FOLDER")
@@ -401,9 +401,9 @@ func getTgApiKey() (res map[string]string, err error) {
 	return res2, nil
 }
 
-func doEvery(d time.Duration, f func(time.Time)) {
-	// Ejecuta una funcion cada d time.*
-	for x := range time.Tick(d) {
-		f(x)
-	}
-}
+// func doEvery(d time.Duration, f func(time.Time)) {
+// 	// Ejecuta una funcion cada d time.*
+// 	for x := range time.Tick(d) {
+// 		f(x)
+// 	}
+// }
