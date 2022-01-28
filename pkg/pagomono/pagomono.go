@@ -28,7 +28,8 @@ func getPath() string {
 
 var (
 	seleniumPath = path.Join(getPath(), "/vendor/selenium-server.jar")
-	chromeDriver = path.Join(getPath(), "/vendor/chromedriver")
+	// chromeDriver = path.Join(getPath(), "/vendor/chromedriver")
+	chromeDriver = "/usr/bin/chromedriver"
 	port         = 8080
 )
 
@@ -48,7 +49,6 @@ func (s *Scrap) NuevoServicio() *selenium.Service {
 		//selenium.Output(os.Stderr),
 	}	
 	selenium.SetDebug(false)
-	log.Println(seleniumPath)
 	service, err := selenium.NewSeleniumService(seleniumPath, port, opts...)
 	if err != nil {
 		fmt.Println("error al iniciar el servicio de chromedriver: ", err.Error())
@@ -67,8 +67,8 @@ func (s *Scrap) FinalizarScrapping() {
 }
 
 func (s *Scrap) IniciarDriver() selenium.WebDriver {
-	// c := chrome.Capabilities{Path: "/usr/bin/google-chrome-stable"}
-	c := chrome.Capabilities{Path: "./vendor/chrome-linux/chrome"}
+	c := chrome.Capabilities{Path: "/usr/bin/google-chrome-stable"}
+	// c := chrome.Capabilities{Path: "./vendor/chrome-linux/chrome"}
 	caps := selenium.Capabilities{"browserName": "chrome"}
 	caps.AddChrome(c)
 
