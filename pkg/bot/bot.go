@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/afiliaciones"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/compania"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/convertidor"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/descargas"
@@ -20,10 +21,6 @@ import (
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/procesonovedad"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
-
-
-var tgApiKey string
-var tgUserId string
 
 var modo modoapp.ModoApp
 
@@ -57,11 +54,13 @@ func StartBot() (err error) {
 		btnMonotributos         = menu.Text("🙈 Monotributistas")
 		btnNovedades     = menu.Text("🙌 Generar Novedades")
 		btnProcNovedades = menu.Text("👁 Procesar Novedad")
+		btnAfiliaciones  = menu.Text("👥 Afiliaciónes")
 	)
 
 	menu.Reply(
 		menu.Row(btnCompañia, btnMonotributos),
 		menu.Row(btnNovedades, btnProcNovedades),
+		menu.Row(btnAfiliaciones),
 		menu.Row(btnAyuda),
 	)
 
@@ -80,6 +79,16 @@ func StartBot() (err error) {
 		modo = modo.Set(modoapp.Compania)
 		b.Delete(m)
 		b.Send(m.Sender, "Envíe el archivo de reporte de compañia")
+	})
+
+	b.Handle(&btnAfiliaciones, func(m *tb.Message) {
+		if m.Chat.ID != tgUserId {
+			return
+		}
+		log.Println("Solicitar padron de afiliados en formato MICAM")
+
+		b.Send(m.Sender, "Envie el archivo de padron de afiliados")
+		modo = modo.Set(modoapp.Afiliaciones)
 	})
 
 	var (
@@ -178,7 +187,13 @@ func StartBot() (err error) {
 
 		if modo.EsGenerarPagos() {
 			if len(cuit) == 0 {
-				cuit = pagomono.FormatoCuit(m.Text)
+				cuit, err = pagomono.FormatoCuit(m.Text)
+				if err != nil {
+					cuit = ""
+					captcha = ""
+					modo.Set("start")
+					b.Send(m.Sender, "Formato de cuit incorrecto")
+				}
 				cuitOriginal = m.Text
 			}
 
@@ -340,14 +355,14 @@ func StartBot() (err error) {
 				log.Panicln("Error al abrir el TSV: ", err)
 			}
 			defer tsvFile.Close()
-			msga, err := b.Send(m.Sender, "Procesando archivo...")
+			msga, _ := b.Send(m.Sender, "Procesando archivo...")
 			data, err := procesonovedad.LeerCSVFTP(tsvFile)
 
 			if err != nil {
 				b.Send(m.Sender, "Ocurrio un error al procesar la novedad")
 				log.Println("Error al procesar la novedad: ", err)
 			}
-			msgb, err := b.Send(m.Sender, "Generando respuesta.. ")
+			msgb, _ := b.Send(m.Sender, "Generando respuesta.. ")
 
 			// Creamos un archivo temporal para enviar..
 			temporaryFile, err := ioutil.TempFile("./", "*.csv")
@@ -378,6 +393,54 @@ func StartBot() (err error) {
 			temporaryFile.Close()
 			b.Delete(msga)
 			b.Delete(msgb)
+		}
+
+		if modo.EsAfiliaciones() {
+			log.Println("Modo afiliaciones")
+			b.Send(m.Sender, "Verificando afiliaciones..")
+			destFolder := os.Getenv("PROCESS_FOLDER")
+			filename := destFolder + m.Document.FileName
+
+			d := &descargas.Download{Bot: *b, Msg: *m}
+			d.DescargarArchivo(filename)
+
+			afiliaciones.ProcesarAfiliaciones(filename, *b, m)
+
+			// if err != nil {
+			// 	b.Send(m.Sender, "Ocurrio un error al procesar la novedad")
+			// 	log.Println("Error al procesar la novedad: ", err)
+			// }
+			// msgb, err := b.Send(m.Sender, "Generando respuesta.. ")
+
+			// // Creamos un archivo temporal para enviar..
+			// temporaryFile, err := ioutil.TempFile("./", "*.csv")
+			// if err != nil {
+			// 	log.Panicln("Error al crear archivo temporal: ", err)
+			// 	b.Send(m.Sender, "Error al procesar novedad..")
+			// }
+			// defer os.Remove(temporaryFile.Name())
+
+			// if _, err := temporaryFile.Write(data); err != nil {
+			// 	log.Panicln("Error al grabar datos en el temporal: ", err)
+			// 	b.Send(m.Sender, "Error al procesar la novedad")
+			// 	temporaryFile.Close()
+			// }
+
+			// res := &tb.Document{
+			// 	File:     tb.FromDisk(temporaryFile.Name()),
+			// 	FileName: "novedad.csv",
+			// 	Caption:  "Archivo procesado",
+			// 	MIME:     "text/csv",
+			// }
+
+			// _, err = b.Send(m.Sender, res)
+			// if err != nil {
+			// 	log.Fatal(err)
+			// 	temporaryFile.Close()
+			// }
+			// temporaryFile.Close()
+			// b.Delete(msga)
+			// b.Delete(msgb)
 
 		}
 
