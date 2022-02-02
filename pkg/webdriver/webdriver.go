@@ -34,7 +34,7 @@ var (
 	seleniumPath = path.Join(getPath(), "/vendor/selenium-server.jar")
 	// chromeDriver = path.Join(getPath(), "/vendor/chromedriver")
 	chromeDriver = "/usr/bin/chromedriver"
-	port         = 8080
+	port         = 9789
 )
 
 // Inicia el servicio de chromedriver
@@ -44,7 +44,7 @@ func (s *Scrap) NuevoServicio() (*selenium.Service, error) {
 		selenium.ChromeDriver(chromeDriver),
 		// Si se activa esta opcion se muestran todos los
 		// logs del servicio de chromedriver
-		//selenium.Output(os.Stderr),
+		// selenium.Output(os.Stderr),
 	}	
 	selenium.SetDebug(false)
 	service, err := selenium.NewSeleniumService(seleniumPath, port, opts...)

@@ -202,17 +202,28 @@ func StartBot() (err error) {
 
 			if scrap.Estado != "iniciado"{
 				b.Send(m.Sender, "Iniciando driver..")
-				scrap.NuevoServicio()
+				_, err = scrap.NuevoServicio()
+				if err != nil {
+					b.Send(m.Sender, "Fallo al iniciar chromedriver")
+					log.Panicln("Error al iniciar el servicio", err)
+				}
 				log.Println("Iniciando driver")
-				scrap.IniciarDriver()
+				_, err = scrap.IniciarDriver()
+				if err != nil {
+					b.Send(m.Sender, "Fallo el arranque del webdriver")
+					log.Panicln("Error al iniciar el driver", err)
+				}
 				log.Println("Navegando a ssssalud")
 				b.Send(m.Sender, "Driver iniciado correctamente, rescatando captcha..")
 			}
 
 			// Url de superintendencia
 			var urlSSS string = "https://www.sssalud.gob.ar/index.php?cat=consultas&page=mono_pagos"
-
-			if !scrap.EsWeb("Superintendencia de Servicios de Salud") {
+			titulo, err := scrap.Driver.Title()
+			if err != nil {
+				log.Panicln("Error al obtener el titulo de la página")
+			}
+			if titulo != "Superintendencia de Servicios de Salud" {
 				scrap.NavegarA(urlSSS)	
 			}
 
