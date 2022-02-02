@@ -13,6 +13,7 @@ import (
 	"github.com/joho/sqltocsv"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/convertidor"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/pagomono"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/webdriver"
 	"github.com/tebeka/selenium"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -124,13 +125,21 @@ func ExtraeDNIs() (padron []*PadronDNI, err error){
 	return p, nil
 }
 
-var scrap = pagomono.Scrap{}
-var webdriver selenium.WebDriver
-
+var scrap = webdriver.Scrap{}
+var wb selenium.WebDriver
 // Inicia el webdriver
 func IniciarDriver(){
-	scrap.NuevoServicio()
-	webdriver = scrap.IniciarDriver()
+	_, err := scrap.NuevoServicio()
+
+	if err != nil {
+		log.Panicln("Error al iniciar el servicio chromedriver")
+	}
+
+	wb, err = scrap.IniciarDriver()
+	if err != nil {
+		log.Panicln("Error al iniciar el driver")
+	}
+
 	scrap.Estado = "nologueado"
 }
 
@@ -143,20 +152,20 @@ func LoguearSuper() error {
 	usuarioSSS := os.Getenv("USUARIO_SSS")
 	passSSS := os.Getenv("PASS_SSS")
 
-	err := webdriver.Get(urlLoginSuper)
+	err := wb.Get(urlLoginSuper)
 	if err != nil {
 		log.Panicln("Error al navegar a la página de login")
 		return err
 	}
 
-	inputUsuario, err  := webdriver.FindElement(selenium.ByName, "_user_name_")
+	inputUsuario, err  := wb.FindElement(selenium.ByName, "_user_name_")
 	
 	if err != nil {
 		log.Panicln("No se econtró el campo de usuario en la página de login")
 		return err
 	}
 
-	inputPassword, err := webdriver.FindElement(selenium.ByName, "_pass_word_")
+	inputPassword, err := wb.FindElement(selenium.ByName, "_pass_word_")
 	if err != nil {
 		log.Panicln("No se econtró el campo de password en la página de login")
 		return err
@@ -165,7 +174,7 @@ func LoguearSuper() error {
 	inputUsuario.SendKeys(usuarioSSS)
 	inputPassword.SendKeys(passSSS)
 	
-	forma, err := webdriver.FindElement(selenium.ByCSSSelector, ".formulario")
+	forma, err := wb.FindElement(selenium.ByCSSSelector, ".formulario")
 	
 	if err != nil {
 		log.Panicln("No se econtró la forma (clase incorrecta en login)")
@@ -185,15 +194,15 @@ func LoguearSuper() error {
 // Extrae la fuente de la web de afiliacion del afiliado por dni
 func AfiliacionWeb(dni string) (fuenteWeb string, err error) {
 	// Enviamos los datos al webdriver
-	inputCUIL, _ := webdriver.FindElement(selenium.ByName, "cuil_b")
-	inputDNI, _ := webdriver.FindElement(selenium.ByName, "nro_doc")
-	btnConsultar, _ := webdriver.FindElement(selenium.ByName, "B1")
+	inputCUIL, _ := wb.FindElement(selenium.ByName, "cuil_b")
+	inputDNI, _ := wb.FindElement(selenium.ByName, "nro_doc")
+	btnConsultar, _ := wb.FindElement(selenium.ByName, "B1")
 
 	inputCUIL.SendKeys(dni)
 	inputDNI.SendKeys(dni)
 	btnConsultar.Click()
 
-	fuenteWeb, err = webdriver.PageSource()
+	fuenteWeb, err = wb.PageSource()
 	if err != nil {
 		return "", err
 	}

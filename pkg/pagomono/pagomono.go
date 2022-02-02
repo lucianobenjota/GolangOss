@@ -6,97 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
-	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/monotributista"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/webdriver"
 	"github.com/tebeka/selenium"
-	"github.com/tebeka/selenium/chrome"
 )
-
-func getPath() string {
-	ex, err := os.Executable()
-	if err != nil {
-		log.Panicln(err)
-	}
-	execPath := filepath.Dir(ex)
-	return execPath
-}
-
-var (
-	seleniumPath = path.Join(getPath(), "/vendor/selenium-server.jar")
-	// chromeDriver = path.Join(getPath(), "/vendor/chromedriver")
-	chromeDriver = "/usr/bin/chromedriver"
-	port         = 8080
-)
-
-type Scrap struct {
-	servicio *selenium.Service
-	driver selenium.WebDriver
-	Estado string
-}
-
-var urlSSS string = "https://www.sssalud.gob.ar/index.php?cat=consultas&page=mono_pagos"
-
-// Inicia el servicio de scraping
-func (s *Scrap) NuevoServicio() *selenium.Service {
-	opts := []selenium.ServiceOption{
-		selenium.StartFrameBuffer(),
-		selenium.ChromeDriver(chromeDriver),
-		//selenium.Output(os.Stderr),
-	}	
-	selenium.SetDebug(false)
-	service, err := selenium.NewSeleniumService(seleniumPath, port, opts...)
-	if err != nil {
-		fmt.Println("error al iniciar el servicio de chromedriver: ", err.Error())
-		log.Panicln(err)
-	}
-	s.servicio = service
-	s.Estado = "iniciado"
-	return service
-}
-
-func (s *Scrap) FinalizarScrapping() {
-	log.Println("Deteniendo el servicio de scrapping")
-	s.driver.Close()
-	s.servicio.Stop()
-	s.Estado = "finalizado"
-}
-
-func (s *Scrap) IniciarDriver() selenium.WebDriver {
-	c := chrome.Capabilities{Path: "/usr/bin/google-chrome-stable"}
-	// c := chrome.Capabilities{Path: "./vendor/chrome-linux/chrome"}
-	caps := selenium.Capabilities{"browserName": "chrome"}
-	caps.AddChrome(c)
-
-	url := fmt.Sprintf("http://localhost:%d/wd/hub", port)
-
-	driver, err := selenium.NewRemote(caps, url)
-	if err != nil {
-		log.Panicln(err)
-	}
-	s.driver = driver
-	return driver
-}
-
-func (s Scrap) NavegarASSS() {
-	err := s.driver.Get(urlSSS) 
-	
-	if err != nil {
-		log.Panicln("Error de navegación: ", err)
-	}
-
-	titulo, err := s.driver.Title()
-	if err != nil {
-		log.Panicln("Error de navegación: ", err)
-	}
-
-	log.Println("El driver se encuentra en la página ", titulo)
-}
 
 // Formatea el CUIT
 func FormatoCuit(cuit string) (resCuit string, err error) {
@@ -204,19 +121,11 @@ func ExtraerYRegistrarPago(fuente string, cuit string) (cantidad int, err error)
 
 }
 
-// Verifica que el driver se encuentre en la pag de pagos de mono
-func (s Scrap) EsSuper() bool{
-	curr_tit, err := s.driver.Title()
-	if err != nil {
-		log.Panicln(err)
-	}
-	return curr_tit == "Superintendencia de Servicios de Salud"
-}
 
 // Obtiene la imagen del captcha desde el webdriver
-func (s Scrap) ObtenerCaptcha() ([]byte) {
+func ObtenerCaptcha(s webdriver.Scrap) ([]byte) {
 	log.Printf("Obteniendo captcha..")
-	element, err := s.driver.FindElement(selenium.ByID, "siimage")
+	element, err := s.Driver.FindElement(selenium.ByID, "siimage")
 	if err != nil {
 		log.Panicln("Error, no se encontro el captcha: ", err)
 	}
@@ -229,8 +138,8 @@ func (s Scrap) ObtenerCaptcha() ([]byte) {
 }
 
 // Rellenar el campo de captcha
-func (s Scrap) RellenarCaptcha(captcha string) (){
-	element, err := s.driver.FindElement(selenium.ByName, "code")
+func RellenarCaptcha(s webdriver.Scrap, captcha string) (){
+	element, err := s.Driver.FindElement(selenium.ByName, "code")
 	if err != nil {
 		log.Panicln("no se encontro el campo para responder captcha, reintentar")
 	}
@@ -241,8 +150,8 @@ func (s Scrap) RellenarCaptcha(captcha string) (){
 }
 
 // Rellenar el campo de cuit con el valor
-func (s Scrap) RellenarCUIT(cuit string) () {
-	element, err := s.driver.FindElement(selenium.ByName, "nro_cuil")
+func RellenarCUIT(s webdriver.Scrap, cuit string) () {
+	element, err := s.Driver.FindElement(selenium.ByName, "nro_cuil")
 	if err != nil {
 		log.Panicln("no se encontro el campo para responder al cuit, reintentar")
 	}
@@ -253,20 +162,12 @@ func (s Scrap) RellenarCUIT(cuit string) () {
 }
 
 // Click en el boton buscar
-func (s Scrap) SubmitPagina() {
-	element, err := s.driver.FindElement(selenium.ByName, "buscar")
+func SubmitPagina(s webdriver.Scrap) {
+	element, err := s.Driver.FindElement(selenium.ByName, "buscar")
 	if err != nil {
 		log.Panicln("No esta el boton buscar")
 	}
 	if err := element.Click(); err != nil {
 		log.Panicln(err)
 	}
-}
-
-func (s Scrap) ObtenerFuente() (fuente string) {
-	fuente, err := s.driver.PageSource()
-	if err != nil {
-		log.Panicln(err)
-	}
-	return fuente
 }

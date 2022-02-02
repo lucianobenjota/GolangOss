@@ -19,6 +19,7 @@ import (
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/novedad"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/pagomono"
 	"github.com/lucianobenjota/go-oss-bot/m/pkg/procesonovedad"
+	"github.com/lucianobenjota/go-oss-bot/m/pkg/webdriver"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -144,7 +145,7 @@ func StartBot() (err error) {
 		b.Send(m.Sender, "Enviar archivo de novedades erroneas del FTP")
 	})
 
-	webdriver := pagomono.Scrap{Estado: "idle"}
+	scrap := webdriver.Scrap{Estado: "idle"}
 	var (
 		cuit, cuitOriginal, captcha string
 	)
@@ -179,7 +180,7 @@ func StartBot() (err error) {
 		}
 
 		if modo.EsFinalizarWebDriver() {
-			webdriver.FinalizarScrapping()
+			scrap.FinalizarScrapping()
 			cuit = ""
 			captcha = ""
 			modo.Set(modoapp.FinalizarWebDriver)
@@ -199,17 +200,20 @@ func StartBot() (err error) {
 
 			log.Println("Iniciando servidor de webdriver")
 
-			if webdriver.Estado != "iniciado"{
+			if scrap.Estado != "iniciado"{
 				b.Send(m.Sender, "Iniciando driver..")
-				webdriver.NuevoServicio()
+				scrap.NuevoServicio()
 				log.Println("Iniciando driver")
-				webdriver.IniciarDriver()
+				scrap.IniciarDriver()
 				log.Println("Navegando a ssssalud")
 				b.Send(m.Sender, "Driver iniciado correctamente, rescatando captcha..")
 			}
 
-			if !webdriver.EsSuper() {
-				webdriver.NavegarASSS()	
+			// Url de superintendencia
+			var urlSSS string = "https://www.sssalud.gob.ar/index.php?cat=consultas&page=mono_pagos"
+
+			if !scrap.EsWeb("Superintendencia de Servicios de Salud") {
+				scrap.NavegarA(urlSSS)	
 			}
 
 			log.Println("captcha:", captcha)
@@ -220,7 +224,7 @@ func StartBot() (err error) {
 				if m.Text != cuitOriginal {
 					captcha = m.Text
 				} else {
-					img := webdriver.ObtenerCaptcha()
+					img := pagomono.ObtenerCaptcha(scrap)
 					p := &tb.Photo{File: tb.FromReader(bytes.NewReader(img))}
 					b.Send(m.Sender, p)
 					b.Send(m.Sender, "Captcha?")
@@ -231,10 +235,10 @@ func StartBot() (err error) {
 				log.Println("Submit de página")
 				log.Println("captcha:", captcha, "largo:", len(captcha))
 				log.Println("cuit:", cuit, "largo:", len(cuit))
-				webdriver.RellenarCUIT(cuit)
-				webdriver.RellenarCaptcha(captcha)
-				webdriver.SubmitPagina()
-				fuente := webdriver.ObtenerFuente()
+				pagomono.RellenarCUIT(scrap, cuit)
+				pagomono.RellenarCaptcha(scrap, captcha)
+				pagomono.SubmitPagina(scrap)
+				fuente := scrap.ObtenerFuente()
 
 				if strings.Contains(fuente, "AAAAAA") {
 					b.Send(m.Sender, "Registrando pagos..")
@@ -265,7 +269,7 @@ func StartBot() (err error) {
 				b.Send(m.Sender, "CUIT a generar?")
 			}
 			if m.Text == "no" {
-				webdriver.FinalizarScrapping()
+				scrap.FinalizarScrapping()
 				modo = modo.Set(modoapp.FinalizarWebDriver)
 			}
 			if m.Text != "Nuevo pago" {
