@@ -32,6 +32,10 @@ func (m ModoApp) EsProcesarNovedades() bool {
 	return m.modo == ProcesarNovedades
 }
 
+func (m ModoApp) EsAfiliaciones() bool {
+	return m.modo == Afiliaciones
+}
+
 func (m ModoApp) Set(newModo string) (ModoApp){
 	m.modo = newModo
 	return m
@@ -50,4 +54,5 @@ var (
 	ProcesarNovedades string = "procesarnovedades"
 	FinalizarWebDriver string = "finalizardriver"
 	EsperandoWebdriver string = "esperandowebdriver"
+	Afiliaciones string = "afiliaciones"
 )
