@@ -3,6 +3,7 @@ package pagomono
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -98,7 +99,11 @@ func (s Scrap) NavegarASSS() {
 }
 
 // Formatea el CUIT
-func FormatoCuit(cuit string) (resCuit string) {
+func FormatoCuit(cuit string) (resCuit string, err error) {
+
+	if len(cuit) == 13 {
+		return cuit, nil
+	}
 
 	if len(cuit) == 11 {
 		cuit = strings.Trim(cuit, " ")
@@ -107,9 +112,10 @@ func FormatoCuit(cuit string) (resCuit string) {
 		b := cuit[2:10]
 		c := cuit[10:]
 		resCuit = a + "-" + b + "-" + c
+		return resCuit, nil
 	}
-
-	return resCuit
+	err = errors.New("CUIT con formato incorrecto")
+	return "", err
 }
 
 // Imprime las variables como tablas json
@@ -127,7 +133,7 @@ func checkErr(err error) {
 	}
 }
 
-func connectDB() *sql.DB {
+func ConnectDB() *sql.DB {
 	db, err := sql.Open("sqlite3", "./monotributos.db")
 	checkErr(err)
 	return db
@@ -136,7 +142,7 @@ func connectDB() *sql.DB {
 func GeneradorPago(rows [][]string, cuit string) (cantidadPagos int, err error) {
 	const periodoLayout = "200601"
 	const fechaLayout = "02-01-2006"
-	db := connectDB()
+	db := ConnectDB()
 	for _, row := range rows {
 		var esUnico bool
 		v := monotributista.Pago{}

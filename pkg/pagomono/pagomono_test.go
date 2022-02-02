@@ -23,7 +23,7 @@ func TestFormatoCuit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotResCuit := FormatoCuit(tt.args.cuit); gotResCuit != tt.wantResCuit {
+			if gotResCuit, _ := FormatoCuit(tt.args.cuit); gotResCuit != tt.wantResCuit {
 				t.Errorf("FormatoCuit() = %v, want %v", gotResCuit, tt.wantResCuit)
 			}
 		})
