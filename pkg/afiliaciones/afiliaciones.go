@@ -36,18 +36,27 @@ func ProcesarAfiliaciones(rutaReporte string, bot tb.Bot, msg *tb.Message) {
 	}
 
 	mensaje, _ := bot.Send(msg.Sender, "Iniciando driver..")
-	IniciarDriver()
+	
+	err = IniciarDriver()
+	if err != nil {
+		bot.Edit(mensaje, "Error al iniciar el driver")
+		log.Panicln(err)
+	}
+
 	err = LoguearSuper()
 	if err != nil {
+		bot.Edit(mensaje, "Error al loguearse en la super")
 		log.Panicln("Error al loguearse en superintendencia")
 	}
 
 	bot.Edit(mensaje, "Webdriver iniciado, iniciando scrapping")
 	db := pagomono.ConnectDB()
-	err = LimparDatosAFililiados(db)
+
+	err = LimpiarDatosAfiliado(db)
 	if err != nil {
 		log.Panicln(err)
 	}
+
 	restante := len(padronDNIs)
 	for _, d := range padronDNIs {
 		dni := d.DNI
@@ -91,6 +100,15 @@ func ProcesarAfiliaciones(rutaReporte string, bot tb.Bot, msg *tb.Message) {
 
 	defer db.Close()	
 
+	err = limpiarTemporal(archivoTemporal)
+	
+	if err != nil {
+		log.Panicln("Error al limpiar archivo temporal")
+	}
+
+	if err = limpiarTemporal("./salida.csv"); err != nil {
+		log.Panicln("Error al limpiar el archivo de salida")
+	}
 
 	bot.Delete(mensaje)
 	bot.Send(msg.Sender, "Proceso finalizado")
@@ -128,19 +146,20 @@ func ExtraeDNIs() (padron []*PadronDNI, err error){
 var scrap = webdriver.Scrap{}
 var wb selenium.WebDriver
 // Inicia el webdriver
-func IniciarDriver(){
+func IniciarDriver() error{
 	_, err := scrap.NuevoServicio()
 
 	if err != nil {
-		log.Panicln("Error al iniciar el servicio chromedriver")
+		return err
 	}
 
 	wb, err = scrap.IniciarDriver()
 	if err != nil {
-		log.Panicln("Error al iniciar el driver")
+		return err
 	}
 
 	scrap.Estado = "nologueado"
+	return nil
 }
 
 // URL de la pagina de login de superintendencia
@@ -411,8 +430,8 @@ func InsertarDatosAfiliado(db *sql.DB, grupoFamiliar []afWeb) error {
 }
 
 // Limpiar la bse de afiliados
-func LimparDatosAFililiados(db *sql.DB) error {
-	q := `DELETE * FROM afiliados;`
+func LimpiarDatosAfiliado(db *sql.DB) error {
+	q := `DELETE FROM afiliaciones;`
 	_, err := db.Exec(q)
 	if err != nil {
 		return err
@@ -452,7 +471,13 @@ func ExportarAfiliacion(db *sql.DB) error {
 	return nil
 }
 
-// Verifica los datos del afiliado en la base de datos
-func VerificaAfiliado() {
-
+// Limpia el archivo temporal
+func limpiarTemporal(ruta string) error {
+	if _, err := os.Stat(ruta); err == nil {
+		e := os.Remove(ruta)
+		if e != nil {
+			return err
+		}
+	}
+	return nil
 }
